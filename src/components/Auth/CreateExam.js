@@ -7,7 +7,6 @@ function CreateExam() {
 
   // 🔹 Exam fields
   const [examName, setExamName] = useState("");
-  const [classId, setClassId] = useState("");
   const [branch, setBranch] = useState("");
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
@@ -17,7 +16,8 @@ function CreateExam() {
   const [duration, setDuration] = useState("");
   const [totalMarks, setTotalMarks] = useState("");
 
-  // 🔹 Classes from DB
+  // 🔥 MOST IMPORTANT
+  const [classId, setClassId] = useState("");
   const [classes, setClasses] = useState([]);
 
   /* ================= FETCH CLASSES ================= */
@@ -27,36 +27,33 @@ function CreateExam() {
       .then((data) => setClasses(data));
   }, []);
 
-  /* 🔹 Subject code mapping */
-  const subjectCodeMap = {
-    BSC: "311305",
-    BEE: "312302",
-    EES: "314301",
-    MAN: "315301",
-    ETI: "316313",
+  /* 🔹 Static dropdown data */
+  const branchOptions = ["CM", "EJ", "CE", "ME", "EE"];
+
+  const semesterOptions = {
+    CM: ["1st Sem", "2nd Sem", "4th Sem", "6th Sem"],
+    EJ: ["1st Sem", "2nd Sem", "4th Sem", "6th Sem"],
+    CE: ["1st Sem", "2nd Sem", "4th Sem", "6th Sem"],
+    ME: ["1st Sem", "2nd Sem", "4th Sem", "6th Sem"],
+    EE: ["1st Sem", "2nd Sem", "4th Sem", "6th Sem"],
   };
 
-  /* ================= CLASS SELECT HANDLER ================= */
-  const handleClassChange = (selectedClassId) => {
-    setClassId(selectedClassId);
-
-    const selectedClass = classes.find(
-      (c) => c._id === selectedClassId
-    );
-
-    if (selectedClass) {
-      // 🔥 AUTO FILL
-      setBranch(selectedClass.branch);
-      setSemester(selectedClass.semester);
-      setSubject(selectedClass.subject || "");
-      setSubCode(subjectCodeMap[selectedClass.subject] || "");
-    }
+  const subjectOptions = {
+    "1st Sem": [{ name: "BSC", code: "311305" }],
+    "2nd Sem": [{ name: "BEE", code: "312302" }],
+    "4th Sem": [{ name: "EES", code: "314301" }],
+    "6th Sem": [
+      { name: "MAN", code: "315301" },
+      { name: "ETI", code: "316313" },
+    ],
   };
 
-  /* ================= SUBJECT CHANGE ================= */
   const handleSubjectChange = (value) => {
+    const selected = subjectOptions[semester].find(
+      (s) => s.name === value
+    );
     setSubject(value);
-    setSubCode(subjectCodeMap[value] || "");
+    setSubCode(selected.code);
   };
 
   /* ================= SUBMIT ================= */
@@ -65,7 +62,6 @@ function CreateExam() {
 
     const examData = {
       examName,
-      classId,        // 🔥 MOST IMPORTANT
       branch,
       semester,
       subject,
@@ -74,6 +70,7 @@ function CreateExam() {
       totalQuestions: Number(totalQuestions),
       duration: Number(duration),
       totalMarks: Number(totalMarks),
+      classId, // 🔥 VERY IMPORTANT
     };
 
     const res = await fetch("http://localhost:5000/api/exams", {
@@ -98,19 +95,12 @@ function CreateExam() {
       <h2>Create Exam</h2>
 
       <form className="create-exam-form" onSubmit={handleSubmit}>
-        {/* Exam Name */}
-        <label>Exam Name</label>
-        <input
-          value={examName}
-          onChange={(e) => setExamName(e.target.value)}
-          required
-        />
 
-        {/* CLASS SELECT */}
+        {/* 🔥 SELECT CLASS */}
         <label>Select Class</label>
         <select
           value={classId}
-          onChange={(e) => handleClassChange(e.target.value)}
+          onChange={(e) => setClassId(e.target.value)}
           required
         >
           <option value="">Select Class</option>
@@ -121,29 +111,73 @@ function CreateExam() {
           ))}
         </select>
 
-        {/* AUTO FILLED FIELDS */}
+        <label>Exam Name</label>
+        <input
+          value={examName}
+          onChange={(e) => setExamName(e.target.value)}
+          required
+        />
+
         <label>Branch</label>
-        <input value={branch} readOnly />
-
-        <label>Semester</label>
-        <input value={semester} readOnly />
-
-        <label>Subject</label>
         <select
-          value={subject}
-          onChange={(e) => handleSubjectChange(e.target.value)}
+          value={branch}
+          onChange={(e) => {
+            setBranch(e.target.value);
+            setSemester("");
+            setSubject("");
+            setSubCode("");
+          }}
           required
         >
-          <option value="">Select Subject</option>
-          {Object.keys(subjectCodeMap).map((s) => (
-            <option key={s} value={s}>{s}</option>
+          <option value="">Select Branch</option>
+          {branchOptions.map((b) => (
+            <option key={b} value={b}>{b}</option>
           ))}
         </select>
 
-        <label>Subject Code</label>
-        <input value={subCode} readOnly />
+        {branch && (
+          <>
+            <label>Semester</label>
+            <select
+              value={semester}
+              onChange={(e) => {
+                setSemester(e.target.value);
+                setSubject("");
+                setSubCode("");
+              }}
+              required
+            >
+              <option value="">Select Semester</option>
+              {semesterOptions[branch].map((sem) => (
+                <option key={sem} value={sem}>{sem}</option>
+              ))}
+            </select>
+          </>
+        )}
 
-        {/* Exam Date */}
+        {semester && (
+          <>
+            <label>Subject</label>
+            <select
+              value={subject}
+              onChange={(e) => handleSubjectChange(e.target.value)}
+              required
+            >
+              <option value="">Select Subject</option>
+              {subjectOptions[semester].map((s) => (
+                <option key={s.code} value={s.name}>{s.name}</option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {subCode && (
+          <>
+            <label>Subject Code</label>
+            <input value={subCode} readOnly />
+          </>
+        )}
+
         <label>Exam Date</label>
         <input
           type="date"
@@ -152,7 +186,6 @@ function CreateExam() {
           required
         />
 
-        {/* Questions */}
         <label>No. of Questions</label>
         <input
           type="number"
@@ -161,7 +194,6 @@ function CreateExam() {
           required
         />
 
-        {/* Duration */}
         <label>Duration (minutes)</label>
         <input
           type="number"
@@ -170,7 +202,6 @@ function CreateExam() {
           required
         />
 
-        {/* Marks */}
         <label>Total Marks</label>
         <input
           type="number"

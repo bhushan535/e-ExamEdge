@@ -10,9 +10,26 @@ const classSchema = new mongoose.Schema(
 
     students: [
       {
-        enrollment: { type: String, required: true },
-        name: { type: String, required: true },
-        password: { type: String, required: true }, // plain for now
+        rollNo: { 
+          type: Number, 
+          required: true 
+        }, // ✅ NEW (college decided roll no.)
+
+        enrollment: { 
+          type: String, 
+          required: true 
+        },
+
+        name: { 
+          type: String, 
+          required: true 
+        },
+
+        password: { 
+          type: String, 
+          required: true 
+        }, // plain for now (college project)
+
         joinedAt: {
           type: Date,
           default: Date.now,

@@ -7,11 +7,8 @@ const Class = require("../models/Class");
 // ==============================
 router.post("/classes", async (req, res) => {
   try {
-    console.log("REQ BODY:", req.body); // 🔍 DEBUG
-
     const { className, subject, semester, branch, year } = req.body;
 
-    // ✅ validation
     if (!className || !subject || !semester || !branch || !year) {
       return res.status(400).json({
         success: false,
@@ -23,8 +20,8 @@ router.post("/classes", async (req, res) => {
       className,
       subject,
       semester,
-      branch,   // ✅ VERY IMPORTANT
-      year,     // ✅ VERY IMPORTANT
+      branch,
+      year,
       students: [],
     });
 
@@ -36,14 +33,12 @@ router.post("/classes", async (req, res) => {
       class: newClass,
     });
   } catch (err) {
-    console.error("CREATE CLASS ERROR:", err);
     res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 });
-
 
 // ==============================
 // GET ALL CLASSES
@@ -74,19 +69,19 @@ router.get("/class/:id", async (req, res) => {
   }
 });
 
-
-
-// JOIN CLASS
+// ==============================
+// JOIN CLASS (WITH ROLL NO)
+// ==============================
 router.post("/class/join/:classId", async (req, res) => {
-  console.log("REQ BODY:", req.body);
   try {
-    const { enrollment, name, password } = req.body;
+    const { rollNo, enrollment, name, password } = req.body;
     const { classId } = req.params;
 
-    if (!enrollment || !name || !password) {
+    // ✅ basic validation
+    if (!rollNo || !enrollment || !name || !password) {
       return res.status(400).json({
         success: false,
-        message: "Enrollment, name and password are required",
+        message: "Roll No, enrollment, name and password are required",
       });
     }
 
@@ -98,20 +93,31 @@ router.post("/class/join/:classId", async (req, res) => {
       });
     }
 
-    // BEFORE adding student
-const existingClass = await Class.findOne({
-  "students.enrollment": enrollment,
-});
+    // ❌ SAME ENROLLMENT IN ANY CLASS
+    const enrollmentExists = await Class.findOne({
+      "students.enrollment": enrollment,
+    });
 
-if (existingClass) {
-  return res.status(400).json({
-    success: false,
-    message: "This enrollment number has already joined a class",
-  });
-}
+    if (enrollmentExists) {
+      return res.status(400).json({
+        success: false,
+        message: "This enrollment number has already joined a class",
+      });
+    }
 
+    // ❌ SAME ROLL NO IN SAME CLASS
+    const rollExists = cls.students.find(
+      (s) => s.rollNo === Number(rollNo)
+    );
 
-    // duplicate check
+    if (rollExists) {
+      return res.status(400).json({
+        success: false,
+        message: "This roll number already exists in this class",
+      });
+    }
+
+    // ❌ SAME ENROLLMENT IN SAME CLASS (extra safety)
     const alreadyJoined = cls.students.find(
       (s) => s.enrollment === enrollment
     );
@@ -123,10 +129,13 @@ if (existingClass) {
       });
     }
 
+    // ✅ ADD STUDENT
     cls.students.push({
+      rollNo: Number(rollNo),
       enrollment,
       name,
       password,
+      joinedAt: new Date(),
     });
 
     await cls.save();

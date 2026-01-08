@@ -141,3 +141,24 @@ hr {
   text-align: center;
   font-weight: bold;
 }
+
+.export-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px 0;
+}
+
+.export-btn {
+  padding: 8px 14px;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  background-color: #1b5e20;
+}
+

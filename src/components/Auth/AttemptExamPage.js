@@ -6,43 +6,66 @@ function AttemptExamPage() {
   const { examId } = useParams();
   const navigate = useNavigate();
 
-  const student = JSON.parse(localStorage.getItem("student")); // logged student
-
+  const student = JSON.parse(localStorage.getItem("student"));
 
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+
+  /* ========================
+     AUTH CHECK
+  ======================== */
+  useEffect(() => {
+    if (!student) {
+      alert("Please login again");
+      navigate("/student-login");
+    }
+  }, []);
 
   /* ========================
      FETCH EXAM + QUESTIONS
   ======================== */
   useEffect(() => {
     const fetchData = async () => {
-      const examRes = await fetch(
-        `http://localhost:5000/api/exams/${examId}`
-      );
-      const examData = await examRes.json();
-      setExam(examData);
+      try {
+        // 🔥 GET ALL EXAMS & FIND ONE (safe)
+        const examRes = await fetch("http://localhost:5000/api/exams");
+        const exams = await examRes.json();
+        const foundExam = exams.find((e) => e._id === examId);
 
-      setTimeLeft(examData.duration * 60); // minutes → seconds
+        if (!foundExam) {
+          alert("Exam not found");
+          navigate("/student-home");
+          return;
+        }
 
-      const qRes = await fetch(
-        `http://localhost:5000/api/questions/${examId}`
-      );
-      const qData = await qRes.json();
-      setQuestions(qData);
+        setExam(foundExam);
+        setTimeLeft(foundExam.duration * 60);
+
+        // QUESTIONS
+        const qRes = await fetch(
+          `http://localhost:5000/api/questions/${examId}`
+        );
+        const qData = await qRes.json();
+        setQuestions(qData);
+      } catch (err) {
+        console.error(err);
+        alert("Error loading exam");
+      }
     };
 
     fetchData();
   }, [examId]);
 
   /* ========================
-     TIMER LOGIC
+     TIMER
   ======================== */
   useEffect(() => {
-    if (timeLeft <= 0 && !submitted) {
+    if (timeLeft === null || submitted) return;
+
+    if (timeLeft <= 0) {
       handleSubmitExam(); // AUTO SUBMIT
       return;
     }
@@ -52,13 +75,16 @@ function AttemptExamPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, submitted]);
 
   /* ========================
-     HANDLE ANSWER
+     HANDLE ANSWERS
   ======================== */
   const handleOptionChange = (qid, option) => {
-    setSelectedAnswers({ ...selectedAnswers, [qid]: option });
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [qid]: option,
+    }));
   };
 
   /* ========================
@@ -66,6 +92,7 @@ function AttemptExamPage() {
   ======================== */
   const handleSubmitExam = async () => {
     if (submitted) return;
+
     setSubmitted(true);
 
     const payload = {
@@ -77,23 +104,28 @@ function AttemptExamPage() {
       })),
     };
 
-    await fetch("http://localhost:5000/api/results/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      await fetch("http://localhost:5000/api/results/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    alert("Exam Submitted");
-    navigate("/student-results");
+      alert("Exam submitted successfully");
+      navigate("/student-results");
+    } catch (err) {
+      console.error(err);
+      alert("Submission failed");
+    }
   };
 
   /* ========================
-     FORMAT TIMER
+     TIMER FORMAT
   ======================== */
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
+  const minutes = Math.floor((timeLeft || 0) / 60);
+  const seconds = (timeLeft || 0) % 60;
 
-  if (!exam) return <p>Loading...</p>;
+  if (!exam) return <p>Loading exam...</p>;
 
   return (
     <div className="attempt-exam-page">
@@ -115,7 +147,6 @@ function AttemptExamPage() {
               <input
                 type="radio"
                 name={q._id}
-                value={op}
                 checked={selectedAnswers[q._id] === op}
                 onChange={() => handleOptionChange(q._id, op)}
               />
@@ -125,7 +156,11 @@ function AttemptExamPage() {
         </div>
       ))}
 
-      <button className="submit-btn" onClick={handleSubmitExam}>
+      <button
+        className="submit-btn"
+        onClick={handleSubmitExam}
+        disabled={submitted}
+      >
         Submit Exam
       </button>
     </div>

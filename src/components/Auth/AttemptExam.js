@@ -18,7 +18,7 @@ function AttemptExam() {
   useEffect(() => {
     if (!student || !student.classId) return;
 
-    fetch(`http://localhost:5000/api/student/${student.classId}`)
+    fetch(`http://localhost:5000/api/exams/student/${student.classId}`)
       .then((res) => res.json())
       .then((data) => setExams(data))
       .catch((err) => console.log(err));

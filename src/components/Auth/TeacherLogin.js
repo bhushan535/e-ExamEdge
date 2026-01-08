@@ -4,7 +4,7 @@ import "./TeacherLogin.css";
 
 function TeacherLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");   // ✅ email
+  const [UserName, setUserName] = useState("");   // ✅ UserName
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -17,7 +17,7 @@ function TeacherLogin() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ UserName, password }),
         }
       );
 
@@ -28,7 +28,7 @@ function TeacherLogin() {
         localStorage.setItem("teacher", JSON.stringify(data.teacher));
         navigate("/TeacherHome");
       } else {
-        setError(data.message || "Invalid Email or Password");
+        setError(data.message || "Invalid UserName or Password");
       }
     } catch (err) {
       setError("Server not responding");
@@ -42,10 +42,10 @@ function TeacherLogin() {
 
         <input
           className="input"
-          type="email"
-          placeholder="Enter Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Enter Text"
+          value={UserName}
+          onChange={(e) => setUserName(e.target.value)}
         />
 
         <input

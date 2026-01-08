@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 function JoinClass() {
   const { classId } = useParams();
 
+  const [rollNo, setRollNo] = useState("");       // ✅ NEW
   const [enrollment, setEnrollment] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -11,7 +12,14 @@ function JoinClass() {
   const handleJoin = async (e) => {
     e.preventDefault();
 
-    console.log("JOIN DATA:", enrollment, name, password, classId);
+    console.log(
+      "JOIN DATA:",
+      rollNo,
+      enrollment,
+      name,
+      password,
+      classId
+    );
 
     const res = await fetch(
       `http://localhost:5000/api/class/join/${classId}`,
@@ -19,6 +27,7 @@ function JoinClass() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          rollNo: Number(rollNo),   // ✅ SEND ROLL NO.
           enrollment,
           name,
           password,
@@ -34,15 +43,14 @@ function JoinClass() {
     }
 
     if (data.success) {
-  // ✅ VERY IMPORTANT
-  localStorage.setItem(
-    "joinedClass",
-    JSON.stringify({ classId })
-  );
+      // ✅ store joined class info
+      localStorage.setItem(
+        "joinedClass",
+        JSON.stringify({ classId })
+      );
 
-  alert("Joined class successfully");
-}
-
+      alert("Joined class successfully");
+    }
   };
 
   return (
@@ -50,6 +58,15 @@ function JoinClass() {
       <h2>Join Class</h2>
 
       <form onSubmit={handleJoin}>
+        {/* 🔥 ROLL NO */}
+        <input
+          type="number"
+          placeholder="Roll No."
+          value={rollNo}
+          onChange={(e) => setRollNo(e.target.value)}
+          required
+        />
+
         <input
           placeholder="Enrollment Number"
           value={enrollment}

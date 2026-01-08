@@ -39,13 +39,14 @@ const examSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🔥 OPTIONAL FOR NOW
+    // Link with Class
     classId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Class",
-      required: false,
+      required: true,
     },
 
+    //send/ publish flag
     isPublished: {
       type: Boolean,
       default: false,

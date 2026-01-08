@@ -9,7 +9,6 @@ function CreateClass() {
   const [branch, setBranch] = useState("");
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
-  const [subject, setSubject] = useState("");
 
   /* 🔹 Static Data */
 
@@ -23,13 +22,6 @@ function CreateClass() {
     "Third Year": ["6th Sem"],
   };
 
-  const subjectOptions = {
-    "1st Sem": ["BSC"],
-    "2nd Sem": ["BEE"],
-    "4th Sem": ["EES"],
-    "6th Sem": ["MAN", "ETI"],
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -38,7 +30,6 @@ function CreateClass() {
       branch,
       year,
       semester,
-      subject,
     };
 
     const res = await fetch("http://localhost:5000/api/classes", {
@@ -78,7 +69,6 @@ function CreateClass() {
             setBranch(e.target.value);
             setYear("");
             setSemester("");
-            setSubject("");
           }}
           required
         >
@@ -97,7 +87,6 @@ function CreateClass() {
             onChange={(e) => {
               setYear(e.target.value);
               setSemester("");
-              setSubject("");
             }}
             required
           >
@@ -116,7 +105,6 @@ function CreateClass() {
             value={semester}
             onChange={(e) => {
               setSemester(e.target.value);
-              setSubject("");
             }}
             required
           >
@@ -124,22 +112,6 @@ function CreateClass() {
             {semesterOptions[year].map((sem) => (
               <option key={sem} value={sem}>
                 {sem}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {/* Subject Dropdown */}
-        {semester && (
-          <select
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
-          >
-            <option value="">Select Subject</option>
-            {subjectOptions[semester].map((sub) => (
-              <option key={sub} value={sub}>
-                {sub}
               </option>
             ))}
           </select>

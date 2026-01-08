@@ -3,7 +3,7 @@ const router = express.Router();
 const Exam = require("../models/Exam");
 
 /* ======================
-   CREATE EXAM
+   CREATE EXAM (Teacher)
 ====================== */
 router.post("/exams", async (req, res) => {
   try {
@@ -17,10 +17,10 @@ router.post("/exams", async (req, res) => {
       totalQuestions,
       duration,
       totalMarks,
-      classId, // optional
+      classId, // 🔥 REQUIRED
     } = req.body;
 
-    // ✅ validation
+    // ✅ validation (classId compulsory)
     if (
       !examName ||
       !branch ||
@@ -30,11 +30,12 @@ router.post("/exams", async (req, res) => {
       !examDate ||
       !totalQuestions ||
       !duration ||
-      !totalMarks
+      !totalMarks ||
+      !classId
     ) {
       return res.status(400).json({
         success: false,
-        message: "All required fields must be filled",
+        message: "All fields including class are required",
       });
     }
 
@@ -48,7 +49,8 @@ router.post("/exams", async (req, res) => {
       totalQuestions,
       duration,
       totalMarks,
-      classId: classId || null,
+      classId,          // 🔥 LINK WITH CLASS
+      isPublished: false,
     });
 
     await exam.save();
@@ -110,29 +112,38 @@ router.put("/exams/:id", async (req, res) => {
 router.delete("/exams/:id", async (req, res) => {
   try {
     await Exam.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: "Exam deleted" });
+    res.json({
+      success: true,
+      message: "Exam deleted",
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
 /* ======================
-   PUBLISH EXAM
+   SEND / PUBLISH EXAM
 ====================== */
-router.put("/exams/:id/publish", async (req, res) => {
+router.put("/exams/publish/:id", async (req, res) => {
   try {
     await Exam.findByIdAndUpdate(req.params.id, {
       isPublished: true,
     });
 
-    res.json({ success: true, message: "Exam published" });
+    res.json({
+      success: true,
+      message: "Exam sent to students",
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// GET exams for student (by classId)
-router.get("/student/:classId", async (req, res) => {
+/* ======================
+   STUDENT – GET EXAMS
+   (ONLY PUBLISHED + SAME CLASS)
+====================== */
+router.get("/exams/student/:classId", async (req, res) => {
   try {
     const exams = await Exam.find({
       classId: req.params.classId,
@@ -144,6 +155,5 @@ router.get("/student/:classId", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
 
 module.exports = router;
