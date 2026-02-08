@@ -11,6 +11,7 @@ import StudentHome from "./components/Auth/StudentHome";
 import CreateClass from "./components/Auth/CreateClass";
 import Classes from "./components/Auth/Classes";
 import ViewClass from "./components/Auth/ViewClass";
+import EditClass from "./components/Auth/EditClass";
 import CreateExam from "./components/Auth/CreateExam";
 import Exams from "./components/Auth/Exams";
 import AddQuestion from "./components/Auth/AddQuestion";
@@ -35,6 +36,7 @@ function App() {
         <Route path="/CreateClass" element={<CreateClass />} />
         <Route path="/Classes" element={<Classes />} />
         <Route path="/class/:id" element={<ViewClass />} />
+        <Route path="/edit-class/:id" element={<EditClass />} />
         <Route path="/CreateExam" element={<CreateExam />} />
         <Route path="/Exams" element={<Exams />} />
         <Route path="/add-question/:examId" element={<AddQuestion />} />

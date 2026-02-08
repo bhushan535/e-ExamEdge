@@ -151,4 +151,92 @@ router.post("/class/join/:classId", async (req, res) => {
   }
 });
 
+// ==============================
+// UPDATE CLASS (EDIT)
+// ==============================
+router.put("/class/:id", async (req, res) => {
+  try {
+    const { className, branch, year, semester } = req.body;
+
+    const updatedClass = await Class.findByIdAndUpdate(
+      req.params.id,
+      {
+        className,
+        branch,
+        year,
+        semester,
+      },
+      { new: true }
+    );
+
+    if (!updatedClass) {
+      return res.status(404).json({
+        success: false,
+        message: "Class not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Class updated successfully",
+      class: updatedClass,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ==============================
+// DELETE CLASS
+// ==============================
+router.delete("/class/:id", async (req, res) => {
+  try {
+    const deletedClass = await Class.findByIdAndDelete(req.params.id);
+
+    if (!deletedClass) {
+      return res.status(404).json({
+        success: false,
+        message: "Class not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Class deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ==============================
+// DELETE STUDENT FROM CLASS
+// ==============================
+router.delete("/class/:classId/student/:studentId", async (req, res) => {
+  try {
+    const { classId, studentId } = req.params;
+
+    const cls = await Class.findById(classId);
+    if (!cls) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    cls.students = cls.students.filter(
+      (s) => s._id.toString() !== studentId
+    );
+
+    await cls.save();
+
+    res.json({
+      success: true,
+      message: "Student removed successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+
 module.exports = router;

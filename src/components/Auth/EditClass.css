@@ -1,0 +1,81 @@
+/* PAGE */
+.edit-class-page {
+  min-height: 100vh;
+  background: #f4f6f8;
+  padding: 40px 20px;
+}
+
+/* CARD */
+.edit-class-form {
+  max-width: 420px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 28px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+
+  /* 🔥 IMPORTANT */
+  position: relative;
+  z-index: 1;
+}
+
+/* TITLE */
+.edit-class-page h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* LABEL */
+.edit-class-form label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+/* INPUT */
+.edit-class-form input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+.edit-class-form input:focus {
+  border-color: #1976d2;
+}
+
+.edit-class-form select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+
+/* BUTTON */
+.edit-class-form button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+
+  background: #1976d2;
+  color: #ffffff;
+
+  /* 🔥 CRITICAL */
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.edit-class-form button:hover {
+  background: #125ea8;
+}

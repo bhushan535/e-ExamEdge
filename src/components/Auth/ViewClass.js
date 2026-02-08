@@ -6,10 +6,15 @@ function ViewClass() {
   const { id } = useParams();
   const [cls, setCls] = useState(null);
 
+  /* ================= FETCH CLASS ================= */
+  const fetchClass = async () => {
+    const res = await fetch(`http://localhost:5000/api/class/${id}`);
+    const data = await res.json();
+    setCls(data);
+  };
+
   useEffect(() => {
-    fetch(`http://localhost:5000/api/class/${id}`)
-      .then((res) => res.json())
-      .then((data) => setCls(data));
+    fetchClass();
   }, [id]);
 
   if (!cls) return <p>Loading...</p>;
@@ -19,7 +24,7 @@ function ViewClass() {
     (a, b) => a.rollNo - b.rollNo
   );
 
-  // ✅ EXPORT STUDENTS FUNCTION
+  /* ================= EXPORT CSV ================= */
   const exportStudents = () => {
     if (sortedStudents.length === 0) {
       alert("No students to export");
@@ -40,14 +45,53 @@ function ViewClass() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.setAttribute(
-      "download",
-      `${cls.className}_students.csv`
-    );
+    link.setAttribute("download", `${cls.className}_students.csv`);
 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  /* ================= DELETE STUDENT ================= */
+  const deleteStudent = async (studentId) => {
+    const confirm = window.confirm(
+      "Are you sure you want to remove this student?"
+    );
+    if (!confirm) return;
+
+    await fetch(
+      `http://localhost:5000/api/class/${id}/student/${studentId}`,
+      { method: "DELETE" }
+    );
+
+    fetchClass(); // reload
+  };
+
+  /* ================= EDIT STUDENT ================= */
+  const editStudent = async (student) => {
+    const name = prompt("Enter Student Name", student.name);
+    const rollNo = prompt("Enter Roll No", student.rollNo);
+    const password = prompt("Enter Password", student.password);
+
+    if (!name || !rollNo || !password) {
+      alert("All fields are required");
+      return;
+    }
+
+    await fetch(
+      `http://localhost:5000/api/class/${id}/student/${student._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          rollNo,
+          password,
+        }),
+      }
+    );
+
+    fetchClass(); // reload
   };
 
   return (
@@ -97,16 +141,32 @@ function ViewClass() {
               <th>Enrollment No.</th>
               <th>Student Name</th>
               <th>Password</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {sortedStudents.map((s) => (
-              <tr key={s.rollNo}>
+              <tr key={s._id}>
                 <td className="roll">{s.rollNo}</td>
                 <td>{s.enrollment}</td>
                 <td>{s.name}</td>
                 <td>{s.password}</td>
+                <td>
+                  <button
+                    className="edit-btn"
+                    onClick={() => editStudent(s)}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    className="delete-btn"
+                    onClick={() => deleteStudent(s._id)}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
