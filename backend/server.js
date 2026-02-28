@@ -11,18 +11,22 @@ app.use(express.json());
 app.use("/api", require("./routes/classRoutes"));
 app.use("/api", require("./routes/examRoutes"));
 app.use("/api", require("./routes/questionRoutes"));
-app.use("/api", require("./routes/teacherRoutes")); 
+app.use("/api", require("./routes/teacherRoutes"));
 app.use("/api", require("./routes/studentAuthRoutes"));
 app.use("/api/results", require("./routes/resultRoutes"));
 
-console.log("ENV URI:", process.env.MONGO_URI);
-// MongoDB
+const PORT = process.env.PORT || 5000;
+
+// 🔥 CONNECT DB FIRST, THEN START SERVER
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.log("Mongo Error:", err));
+  .then(() => {
+    console.log("MongoDB Connected");
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Mongo Error:", err);
+  });

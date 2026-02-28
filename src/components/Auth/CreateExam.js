@@ -12,11 +12,13 @@ function CreateExam() {
   const [subject, setSubject] = useState("");
   const [subCode, setSubCode] = useState("");
   const [examDate, setExamDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [totalQuestions, setTotalQuestions] = useState("");
   const [duration, setDuration] = useState("");
   const [totalMarks, setTotalMarks] = useState("");
 
-  // 🔥 autofill fields
+  // autofill fields
   const [classId, setClassId] = useState("");
   const [branch, setBranch] = useState("");
   const [year, setYear] = useState("");
@@ -51,19 +53,19 @@ function CreateExam() {
     const selectedClass = classes.find((c) => c._id === id);
     if (!selectedClass) return;
 
-    // 🔥 AUTO FILL
     setBranch(selectedClass.branch);
     setYear(selectedClass.year);
     setSemester(selectedClass.semester);
 
-    // reset subject
     setSubject("");
     setSubCode("");
   };
 
   /* ================= SUBJECT SELECT ================= */
   const handleSubjectChange = (value) => {
-    const selected = subjectOptions[semester]?.find((s) => s.name === value);
+    const selected = subjectOptions[semester]?.find(
+      (s) => s.name === value
+    );
     setSubject(value);
     setSubCode(selected?.code || "");
   };
@@ -71,6 +73,12 @@ function CreateExam() {
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🔥 time validation
+    if (startTime >= endTime) {
+      alert("End time must be after start time");
+      return;
+    }
 
     const examData = {
       examName,
@@ -81,6 +89,8 @@ function CreateExam() {
       subject,
       subCode,
       examDate,
+      startTime,
+      endTime,
       totalQuestions: Number(totalQuestions),
       duration: Number(duration),
       totalMarks: Number(totalMarks),
@@ -108,7 +118,7 @@ function CreateExam() {
       <h2>Create Exam</h2>
 
       <form className="create-exam-form" onSubmit={handleSubmit}>
-        {/* 🔥 SELECT CLASS */}
+
         <label>Select Class</label>
         <select
           value={classId}
@@ -123,7 +133,6 @@ function CreateExam() {
           ))}
         </select>
 
-        {/* 🔥 AUTO FILLED (READ ONLY) */}
         <label>Branch</label>
         <input value={branch} readOnly />
 
@@ -133,7 +142,6 @@ function CreateExam() {
         <label>Semester</label>
         <input value={semester} readOnly />
 
-        {/* EXAM NAME */}
         <label>Exam Name</label>
         <input
           value={examName}
@@ -141,7 +149,6 @@ function CreateExam() {
           required
         />
 
-        {/* SUBJECT */}
         {semester && (
           <>
             <label>Subject</label>
@@ -171,8 +178,26 @@ function CreateExam() {
         <input
           type="date"
           value={examDate}
-          min={today} // 🔥 past dates disabled
+          min={today}
           onChange={(e) => setExamDate(e.target.value)}
+          required
+        />
+
+        {/* 🔥 NEW FIELDS */}
+
+        <label>Start Time</label>
+        <input
+          type="time"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+          required
+        />
+
+        <label>End Time</label>
+        <input
+          type="time"
+          value={endTime}
+          onChange={(e) => setEndTime(e.target.value)}
           required
         />
 

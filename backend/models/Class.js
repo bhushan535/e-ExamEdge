@@ -2,32 +2,48 @@ const mongoose = require("mongoose");
 
 const classSchema = new mongoose.Schema(
   {
-    className: { type: String, required: true },
-    branch: { type: String, required: true },
-    year: { type: String, required: true },
-    semester: { type: String, required: true },    
+    className: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
+    branch: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    year: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    semester: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // 🔥 Students Array (NO required inside)
     students: [
       {
-        rollNo: { 
-          type: Number, 
-          required: true 
-        }, // ✅ NEW (college decided roll no.)
-
-        enrollment: { 
-          type: String, 
-          required: true 
+        rollNo: {
+          type: Number,
         },
 
-        name: { 
-          type: String, 
-          required: true 
+        enrollment: {
+          type: String,
         },
 
-        password: { 
-          type: String, 
-          required: true 
-        }, // plain for now (college project)
+        name: {
+          type: String,
+        },
+
+        password: {
+          type: String,
+        },
 
         joinedAt: {
           type: Date,
