@@ -15,7 +15,7 @@ app.use("/api", require("./routes/teacherRoutes"));
 app.use("/api", require("./routes/studentAuthRoutes"));
 app.use("/api/results", require("./routes/resultRoutes"));
 
-
+console.log("ENV URI:", process.env.MONGO_URI);
 // MongoDB
 mongoose
   .connect(process.env.MONGO_URI)

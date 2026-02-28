@@ -5,6 +5,8 @@ import "./CreateExam.css";
 function CreateExam() {
   const navigate = useNavigate();
 
+  const today = new Date().toISOString().split("T")[0];
+
   // exam fields
   const [examName, setExamName] = useState("");
   const [subject, setSubject] = useState("");
@@ -61,9 +63,7 @@ function CreateExam() {
 
   /* ================= SUBJECT SELECT ================= */
   const handleSubjectChange = (value) => {
-    const selected = subjectOptions[semester]?.find(
-      (s) => s.name === value
-    );
+    const selected = subjectOptions[semester]?.find((s) => s.name === value);
     setSubject(value);
     setSubCode(selected?.code || "");
   };
@@ -108,7 +108,6 @@ function CreateExam() {
       <h2>Create Exam</h2>
 
       <form className="create-exam-form" onSubmit={handleSubmit}>
-
         {/* 🔥 SELECT CLASS */}
         <label>Select Class</label>
         <select
@@ -172,6 +171,7 @@ function CreateExam() {
         <input
           type="date"
           value={examDate}
+          min={today} // 🔥 past dates disabled
           onChange={(e) => setExamDate(e.target.value)}
           required
         />
