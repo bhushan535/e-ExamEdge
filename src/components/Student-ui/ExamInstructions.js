@@ -26,17 +26,36 @@ setExam(found);
 
 },[examId]);
 
-/* START EXAM */
+/* VERIFY CODE + START EXAM */
 
-const startExam = ()=>{
+const startExam = async ()=>{
 
 if(!exam) return;
 
-/* CHECK EXAM CODE */
+try{
 
-if(enteredCode !== exam.examCode){
-alert("Invalid Exam Code");
+const res = await fetch("http://localhost:5000/api/exams/verify-code",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+examId:examId,
+code:enteredCode.trim()
+})
+
+});
+
+const data = await res.json();
+
+if(!data.success){
+
+alert(data.message || "Invalid Code");
 return;
+
 }
 
 /* SAVE INSTRUCTION ACCEPTED */
@@ -46,6 +65,14 @@ localStorage.setItem("instructionAccepted",examId);
 /* NAVIGATE TO EXAM */
 
 navigate(`/attempt-exam/${examId}`);
+
+}
+catch(err){
+
+console.error(err);
+alert("Server error while verifying code");
+
+}
 
 };
 
@@ -70,21 +97,13 @@ return(
 <ul className="instruction-list">
 
 <li>The total duration of the examination is fixed and will not be extended.</li>
-
 <li>Once the examination starts, it cannot be paused or restarted.</li>
-
 <li>Do not refresh or close the browser during the exam.</li>
-
 <li>Each question carries equal marks unless specified.</li>
-
 <li>Only one option is correct for each question.</li>
-
 <li>The exam will automatically submit when time expires.</li>
-
 <li>Any malpractice may result in disqualification.</li>
-
 <li>Ensure a stable internet connection before starting.</li>
-
 <li>The institution is not responsible for power or network failures.</li>
 
 </ul>

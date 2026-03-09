@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 const Exam = require("../models/Exam");
-const Student = require("../models/Student");
 const ExamAccess = require("../models/ExamAccess");
+const Class = require("../models/Class");
 
 /* ======================
 CREATE EXAM
@@ -53,7 +53,6 @@ year,
 semester,
 subject,
 subCode,
-
 examDate:safeDate,
 
 totalQuestions:Number(totalQuestions) || 0,
@@ -61,7 +60,6 @@ duration:Number(duration) || 0,
 totalMarks:Number(totalMarks) || 0,
 
 classId,
-
 isPublished:false
 
 });
@@ -97,7 +95,6 @@ router.get("/exams", async (req,res)=>{
 try{
 
 const exams = await Exam.find().sort({createdAt:-1});
-
 res.json(exams);
 
 }
@@ -131,8 +128,6 @@ message:"Exam not found"
 });
 
 }
-
-/* toggle publish */
 
 exam.isPublished = !exam.isPublished;
 
@@ -171,9 +166,19 @@ try{
 const examId = req.params.examId;
 const {classId} = req.body;
 
-/* find students in class */
+/* find class */
 
-const students = await Student.find({classId});
+const classData = await Class.findById(classId);
+
+if(!classData){
+
+return res.status(404).json({
+message:"Class not found"
+});
+
+}
+
+const students = classData.students;
 
 if(!students.length){
 
@@ -192,7 +197,7 @@ const code = Math.floor(100000 + Math.random()*900000).toString();
 const access = new ExamAccess({
 
 examId,
-studentId:student._id,
+studentId:student.enrollment,
 accessCode:code,
 used:false
 
@@ -203,7 +208,7 @@ await access.save();
 codes.push({
 
 studentName:student.name,
-studentId:student._id,
+studentId:student.enrollment,
 code
 
 });
@@ -226,30 +231,92 @@ message:err.message
 });
 
 /* ======================
-   GET EXAMS FOR STUDENT
+GET EXAMS FOR STUDENT
 ====================== */
 
 router.get("/exams/student/:classId", async (req, res) => {
 
-  try {
+try {
 
-    const exams = await Exam.find({
-      classId: req.params.classId,
-      isPublished: true
-    }).sort({ examDate: 1 });
+const exams = await Exam.find({
+classId: req.params.classId,
+isPublished: true
+}).sort({ examDate: 1 });
 
-    res.json(exams);
+res.json(exams);
 
-  } catch (err) {
+}
+catch (err) {
 
-    console.error("STUDENT EXAMS ERROR:", err);
+console.error("STUDENT EXAMS ERROR:", err);
 
-    res.status(500).json({
-      message: err.message
-    });
+res.status(500).json({
+message: err.message
+});
 
-  }
+}
 
 });
+
+/* ======================
+VERIFY EXAM CODE
+====================== */
+
+router.post("/exams/verify-code", async (req,res)=>{
+
+try{
+
+const {examId, code} = req.body;
+
+/* find code */
+
+const access = await ExamAccess.findOne({
+examId:examId,
+accessCode:code
+});
+
+if(!access){
+
+return res.status(400).json({
+success:false,
+message:"Invalid Code"
+});
+
+}
+
+/* check used */
+
+if(access.used){
+
+return res.status(400).json({
+success:false,
+message:"Code already used"
+});
+
+}
+
+/* mark used */
+
+access.used = true;
+await access.save();
+
+res.json({
+success:true,
+message:"Code Verified"
+});
+
+}
+catch(err){
+
+console.error("VERIFY CODE ERROR:",err);
+
+res.status(500).json({
+message:err.message
+});
+
+}
+
+});
+
 
 module.exports = router;

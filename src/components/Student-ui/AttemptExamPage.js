@@ -48,9 +48,11 @@ navigate("/attempt-exams");
 return;
 }
 
+/* duration timer */
+
 setTimeLeft(exam.duration * 60);
 
-/* GET QUESTIONS */
+/* QUESTIONS */
 
 const res = await fetch(`http://localhost:5000/api/questions/${examId}`);
 const data = await res.json();
@@ -58,7 +60,6 @@ const data = await res.json();
 setQuestions(data);
 
 }
-
 catch(err){
 
 console.log(err);
@@ -81,15 +82,13 @@ if(submitted) return;
 
 if(timeLeft <= 0){
 
-submitExam(true); // auto submit
+submitExam(true);
 return;
 
 }
 
 const timer = setInterval(()=>{
-
 setTimeLeft(prev => prev - 1);
-
 },1000);
 
 return ()=>clearInterval(timer);
@@ -104,7 +103,7 @@ const handleBeforeUnload = (e)=>{
 
 if(!submitted){
 e.preventDefault();
-e.returnValue = "";
+e.returnValue="";
 }
 
 };
@@ -122,9 +121,7 @@ useEffect(()=>{
 const handleVisibility = ()=>{
 
 if(document.hidden && !submitted){
-
 alert("Warning: Do not switch tabs during the exam!");
-
 }
 
 };
@@ -135,15 +132,18 @@ return ()=>document.removeEventListener("visibilitychange",handleVisibility);
 
 },[submitted]);
 
-/* 📝 SELECT ANSWER */
+/* SELECT ANSWER */
 
 const handleSelect = (qid,option)=>{
 
-setAnswers(prev => ({...prev,[qid]:option}));
+setAnswers(prev => ({
+...prev,
+[qid]:option
+}));
 
 };
 
-/* ⏮ PREVIOUS */
+/* NAVIGATION */
 
 const prevQuestion = ()=>{
 
@@ -153,8 +153,6 @@ setCurrentIndex(currentIndex - 1);
 
 };
 
-/* ⏭ NEXT */
-
 const nextQuestion = ()=>{
 
 if(currentIndex < questions.length - 1){
@@ -163,9 +161,9 @@ setCurrentIndex(currentIndex + 1);
 
 };
 
-/* ✅ SUBMIT */
+/* SUBMIT EXAM */
 
-const submitExam = (auto=false)=>{
+const submitExam = async(auto=false)=>{
 
 if(submitted) return;
 
@@ -182,14 +180,37 @@ if(!ok) return;
 
 }
 
+try{
+
+/* SEND ANSWERS */
+
+await fetch("http://localhost:5000/api/exams/submit",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+examId:examId,
+answers:answers
+})
+
+});
+
+}
+catch(err){
+console.log(err);
+}
+
 setSubmitted(true);
 
 localStorage.removeItem("instructionAccepted");
 
 if(auto){
 alert("Time is over. Exam submitted automatically.");
-}
-else{
+}else{
 alert("Exam submitted successfully");
 }
 
@@ -197,15 +218,13 @@ navigate("/StudentHome");
 
 };
 
-/* ⏱ TIME FORMAT */
+/* TIMER FORMAT */
 
 const minutes = Math.floor(timeLeft/60);
 const seconds = timeLeft % 60;
 
 if(questions.length === 0){
-
 return <p style={{textAlign:"center"}}>Loading questions...</p>;
-
 }
 
 const currentQuestion = questions[currentIndex];
@@ -217,7 +236,7 @@ return(
 
 <div className="attempt-exam-layout">
 
-{/* LEFT */}
+{/* LEFT PANEL */}
 
 <div className="attempt-exam-page">
 
@@ -233,7 +252,9 @@ return(
 <b>Q{currentIndex + 1}.</b> {currentQuestion.questionText}
 </p>
 
-{currentQuestion.options.map((op,i)=>( <label key={i} className="option">
+{currentQuestion.options.map((op,i)=>(
+
+<label key={i} className="option">
 
 <input
 type="radio"
@@ -245,6 +266,7 @@ onChange={()=>handleSelect(currentQuestion._id,op)}
 {op}
 
 </label>
+
 ))}
 
 </div>
@@ -308,6 +330,7 @@ ${currentIndex === index ? "active" : ""}`}
 {index + 1}
 
 </div>
+
 ))}
 
 </div>

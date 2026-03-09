@@ -7,6 +7,8 @@ function Exams(){
 
 const [exams,setExams] = useState([]);
 const [search,setSearch] = useState("");
+const [showCodes,setShowCodes] = useState(false);
+const [codes,setCodes] = useState([]);
 
 const navigate = useNavigate();
 const location = useLocation();
@@ -99,22 +101,60 @@ method:"PUT"
 const data = await res.json();
 
 if(res.ok){
-
 alert(data.message);
 fetchExams();
-
 }
 else{
-
 alert(data.message || "Failed");
+}
 
 }
+catch(err){
+console.error(err);
+alert("Server error");
+}
+
+};
+
+/* GENERATE STUDENT CODES */
+
+const generateCodes = async(exam)=>{
+
+try{
+
+const res = await fetch(
+`http://localhost:5000/api/exams/generate-codes/${exam._id}`,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+classId:exam.classId
+})
+}
+);
+
+const data = await res.json();
+
+/* FIX FOR MAP ERROR */
+
+if(Array.isArray(data)){
+setCodes(data);
+}
+else{
+setCodes([]);
+console.log("Server response:",data);
+}
+
+setShowCodes(true);
 
 }
 catch(err){
 
 console.error(err);
-alert("Server error");
+setCodes([]);
+alert("Failed to generate codes");
 
 }
 
@@ -266,10 +306,6 @@ return(
 <b>Total Marks:</b> {exam.totalMarks}
 </p>
 
-<p>
-<b>Exam Code:</b> {exam.examCode}
-</p>
-
 </div>
 
 <div className="exam-btns">
@@ -307,6 +343,14 @@ onClick={()=>togglePublish(exam)}
 {exam.isPublished ? "Unpublish" : "Publish"} </button>
 
 <button
+className="code-btn"
+onClick={()=>generateCodes(exam)}
+
+>
+
+Generate Codes </button>
+
+<button
 className="result-btn"
 onClick={()=>navigate(`/student-results/${exam._id}`)}
 
@@ -325,6 +369,49 @@ Results </button>
 }
 
 </div>
+
+{/* POPUP */}
+
+{showCodes && (
+
+<div className="code-popup">
+
+<div className="code-box">
+
+<h3>Student Exam Codes</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Student</th>
+<th>Code</th>
+</tr>
+</thead>
+
+<tbody>
+
+{Array.isArray(codes) && codes.map((c,index)=>(
+
+<tr key={index}>
+<td>{c.studentName}</td>
+<td>{c.code}</td>
+</tr>
+
+))}
+
+</tbody>
+
+</table>
+
+<button onClick={()=>setShowCodes(false)}>
+Close </button>
+
+</div>
+
+</div>
+
+)}
 
 </div>
 

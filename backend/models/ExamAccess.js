@@ -8,9 +8,10 @@ ref:"Exam",
 required:true
 },
 
+/* student enrollment store */
+
 studentId:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Student",
+type:String,
 required:true
 },
 
