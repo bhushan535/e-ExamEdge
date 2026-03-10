@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Toast      from "../Toast";
+import useToast   from "../useToast";
+import PopupModal from "../PopupModal";
 import "./AddQuestion.css";
 
 function AddQuestion() {
@@ -15,6 +18,10 @@ function AddQuestion() {
   const [editId, setEditId] = useState(null);
 
   const [totalQuestionsAllowed, setTotalQuestionsAllowed] = useState(0);
+
+  const [deleteModal, setDeleteModal] = useState({ open: false, targetId: null });
+
+  const { toasts, showToast, removeToast } = useToast();
 
   /* ================= FETCH EXAM DETAILS ================= */
   const fetchExam = async () => {
@@ -36,6 +43,7 @@ function AddQuestion() {
   useEffect(() => {
     fetchExam();
     fetchQuestions();
+    // eslint-disable-next-line
   }, []);
 
   /* ================= ADD / UPDATE ================= */
@@ -43,16 +51,11 @@ function AddQuestion() {
     e.preventDefault();
 
     if (!isEditing && questions.length >= totalQuestionsAllowed) {
-      alert("Question limit reached");
+      showToast("Question limit reached. All questions have been added.", "warning");
       return;
     }
 
-    const payload = {
-      examId,
-      questionText,
-      options,
-      correctAnswer,
-    };
+    const payload = { examId, questionText, options, correctAnswer };
 
     let url = "http://localhost:5000/api/questions";
     let method = "POST";
@@ -71,11 +74,11 @@ function AddQuestion() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.message || "Error");
+      showToast(data.message || "Something went wrong. Please try again.", "error");
       return;
     }
 
-    alert(isEditing ? "Question Updated" : "Question Added");
+    showToast(isEditing ? "Question updated successfully!" : "Question added successfully!", "success");
 
     resetForm();
     fetchQuestions();
@@ -83,9 +86,7 @@ function AddQuestion() {
 
   /* ================= DELETE ================= */
   const deleteQuestion = async (id) => {
-    await fetch(`http://localhost:5000/api/questions/${id}`, {
-      method: "DELETE",
-    });
+    await fetch(`http://localhost:5000/api/questions/${id}`, { method: "DELETE" });
     fetchQuestions();
   };
 
@@ -108,17 +109,22 @@ function AddQuestion() {
     setEditId(null);
   };
 
-  const isLimitReached =
-    questions.length >= totalQuestionsAllowed && !isEditing;
+  const stripPrefix = (text) => {
+    if (!text) return "";
+    return text.replace(/^\s*[\(\[]?[A-Da-d][\)\]\.]\s*/, "").trim();
+  };
+
+  const isLimitReached = questions.length >= totalQuestionsAllowed && !isEditing;
 
   return (
     <div className="add-question-page">
+      <Toast toasts={toasts} removeToast={removeToast} />
+
       <div className="add-question-card">
         <h2>Add Questions</h2>
 
         <p>
-          Questions Added: <b>{questions.length}</b> /{" "}
-          <b>{totalQuestionsAllowed}</b>
+          Questions Added: <b>{questions.length}</b> / <b>{totalQuestionsAllowed}</b>
         </p>
 
         {/* FORM */}
@@ -140,31 +146,35 @@ function AddQuestion() {
                   const newOptions = [...options];
                   newOptions[i] = e.target.value;
                   setOptions(newOptions);
+                  if (correctAnswer === options[i]) {
+                    setCorrectAnswer("");
+                  }
                 }}
                 required
               />
             ))}
 
-            <input
-              placeholder="Correct Answer"
+            <label>Correct Answer</label>
+            <select
               value={correctAnswer}
               onChange={(e) => setCorrectAnswer(e.target.value)}
               required
-            />
+              disabled={options.filter(opt => opt.trim() !== "").length === 0}
+            >
+              <option value="">-- Select Correct Answer --</option>
+              {options
+                .filter((opt) => opt.trim() !== "")
+                .map((opt, i) => (
+                  <option key={i} value={opt}>{opt}</option>
+                ))}
+            </select>
 
             <div className="btn-row">
               <button type="submit" className="add-btn">
                 {isEditing ? "Update Question" : "Add Question"}
               </button>
-
               {isEditing && (
-                <button
-                  type="button"
-                  className="cancel-btn"
-                  onClick={resetForm}
-                >
-                  Cancel
-                </button>
+                <button type="button" className="cancel-btn" onClick={resetForm}>Cancel</button>
               )}
             </div>
           </form>
@@ -172,12 +182,7 @@ function AddQuestion() {
 
         {/* DONE BUTTON */}
         {isLimitReached && (
-          <button
-            className="done-btn"
-            onClick={() => navigate("/exams")}
-          >
-            Done
-          </button>
+          <button className="done-btn" onClick={() => navigate("/exams")}>Done</button>
         )}
 
         {/* QUESTION LIST */}
@@ -185,32 +190,37 @@ function AddQuestion() {
 
         {questions.map((q, index) => (
           <div className="question-item" key={q._id}>
-            <p>
-              <b>Q{index + 1}:</b> {q.questionText}
-            </p>
-
+            <p><b>Q{index + 1}:</b> {q.questionText}</p>
             <ul>
               {q.options.map((op, i) => (
-                <li key={i}>{op}</li>
+                <li key={i}><b>{["A", "B", "C", "D"][i]})</b> {stripPrefix(op)}</li>
               ))}
             </ul>
-
-            <p className="correct">✔ {q.correctAnswer}</p>
-
+            <p className="correct">✔ Correct: {stripPrefix(q.correctAnswer)}</p>
             <div className="btn-row">
-              <button className="edit-btn" onClick={() => handleEdit(q)}>
-                Edit
-              </button>
-              <button
-                className="delete-btn"
-                onClick={() => deleteQuestion(q._id)}
-              >
-                Delete
-              </button>
+              <button className="edit-btn" onClick={() => handleEdit(q)}>Edit</button>
+              <button className="delete-btn" onClick={() => setDeleteModal({ open: true, targetId: q._id })}>Delete</button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation PopupModal */}
+      <PopupModal
+        isOpen={deleteModal.open}
+        type="error"
+        title="Delete Question?"
+        message="This question will be permanently deleted and cannot be recovered."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        confirmColor="#dc2626"
+        onConfirm={async () => {
+          await deleteQuestion(deleteModal.targetId);
+          setDeleteModal({ open: false, targetId: null });
+          showToast("Question deleted.", "info");
+        }}
+        onCancel={() => setDeleteModal({ open: false, targetId: null })}
+      />
     </div>
   );
 }

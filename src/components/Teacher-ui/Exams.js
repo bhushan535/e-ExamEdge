@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import "./Exams.css";
 import { FaBookOpen, FaEdit, FaTrash, FaPlus, FaSearch } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
+import Toast      from "../Toast";
+import useToast   from "../useToast";
+import PopupModal from "../PopupModal";
 
 function Exams(){
 
@@ -9,6 +12,10 @@ const [exams,setExams] = useState([]);
 const [search,setSearch] = useState("");
 const [showCodes,setShowCodes] = useState(false);
 const [codes,setCodes] = useState([]);
+
+const [deleteModal, setDeleteModal] = useState({ open: false, targetId: null });
+
+const { toasts, showToast, removeToast } = useToast();
 
 const navigate = useNavigate();
 const location = useLocation();
@@ -75,17 +82,10 @@ return "ENDED";
 
 /* DELETE */
 
-const deleteExam = async(id)=>{
-
-const confirm = window.confirm("Delete this exam?");
-if(!confirm) return;
-
-await fetch(`http://localhost:5000/api/exams/${id}`,{
-method:"DELETE"
-});
-
-fetchExams();
-
+const confirmDeleteExam = async (id) => {
+  await fetch(`http://localhost:5000/api/exams/${id}`, { method: "DELETE" });
+  fetchExams();
+  showToast("Exam deleted.", "info");
 };
 
 /* TOGGLE PUBLISH */
@@ -101,17 +101,17 @@ method:"PUT"
 const data = await res.json();
 
 if(res.ok){
-alert(data.message);
+showToast(data.message || "Publish status updated!", "success");
 fetchExams();
 }
 else{
-alert(data.message || "Failed");
+showToast(data.message || "Failed to update", "error");
 }
 
 }
 catch(err){
 console.error(err);
-alert("Server error");
+showToast("Server error", "error");
 }
 
 };
@@ -154,7 +154,7 @@ catch(err){
 
 console.error(err);
 setCodes([]);
-alert("Failed to generate codes");
+showToast("Failed to generate codes", "error");
 
 }
 
@@ -176,6 +176,8 @@ const ended = exams.filter(e=>getStatus(e)==="ENDED").length;
 return(
 
 <div className="exam-page">
+
+<Toast toasts={toasts} removeToast={removeToast} />
 
 {/* NAVBAR */}
 
@@ -320,7 +322,7 @@ onClick={()=>navigate(`/edit-exam/${exam._id}`)}
 
 <button
 className="delete-btn"
-onClick={()=>deleteExam(exam._id)}
+onClick={() => setDeleteModal({ open: true, targetId: exam._id })}
 
 >
 
@@ -412,6 +414,22 @@ Close </button>
 </div>
 
 )}
+
+{/* Delete Exam Confirmation */}
+<PopupModal
+  isOpen={deleteModal.open}
+  type="error"
+  title="Delete Exam?"
+  message="Are you sure you want to delete this exam? All related questions, codes, and results will be permanently removed."
+  confirmText="Yes, Delete"
+  cancelText="Cancel"
+  confirmColor="#dc2626"
+  onConfirm={async () => {
+    await confirmDeleteExam(deleteModal.targetId);
+    setDeleteModal({ open: false, targetId: null });
+  }}
+  onCancel={() => setDeleteModal({ open: false, targetId: null })}
+/>
 
 </div>
 

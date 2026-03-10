@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Toast    from "../Toast";
+import useToast from "../useToast";
 import "./CreateExam.css";
 
 function CreateExam() {
 
 const navigate = useNavigate();
+const { toasts, showToast, removeToast } = useToast();
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -16,7 +19,7 @@ const [subCode,setSubCode] = useState("");
 const [examDate,setExamDate] = useState("");
 const [totalQuestions,setTotalQuestions] = useState("");
 const [duration,setDuration] = useState("");
-const [totalMarks,setTotalMarks] = useState("");
+const [marksPerQuestion,setMarksPerQuestion] = useState("");
 
 /* CLASS DATA */
 
@@ -109,7 +112,8 @@ examDate,
 
 totalQuestions:Number(totalQuestions),
 duration:Number(duration),
-totalMarks:Number(totalMarks)
+marksPerQuestion:Number(marksPerQuestion),
+totalMarks:Number(totalQuestions) * Number(marksPerQuestion)
 
 };
 
@@ -127,22 +131,20 @@ body:JSON.stringify(examData)
 
 const data = await res.json();
 
-if(!res.ok){
+  if (!res.ok) {
+    showToast(data.message || "Failed to create exam. Please try again.", "error");
+    return;
+  }
 
-alert(data.message || "Failed to create exam");
-return;
-
-}
-
-alert("Exam created successfully");
-
-navigate("/Exams");
-
+  showToast("Exam created successfully! 🎉", "success");
+  setTimeout(() => navigate("/Exams"), 1500);
 };
 
 return (
 
 <div className="create-exam-page">
+
+<Toast toasts={toasts} removeToast={removeToast} />
 
 <h2>Create Exam</h2>
 
@@ -254,14 +256,18 @@ onChange={(e)=>setDuration(e.target.value)}
 required
 />
 
-<label>Total Marks</label>
+<label>Marks Per Question</label>
 
 <input
 type="number"
-value={totalMarks}
-onChange={(e)=>setTotalMarks(e.target.value)}
+value={marksPerQuestion}
+onChange={(e)=>setMarksPerQuestion(e.target.value)}
 required
 />
+
+<p className="total-marks-preview">
+  Total Exam Marks: <strong>{(Number(totalQuestions) && Number(marksPerQuestion)) ? Number(totalQuestions) * Number(marksPerQuestion) : 0}</strong>
+</p>
 
 <button type="submit">
 Create Exam

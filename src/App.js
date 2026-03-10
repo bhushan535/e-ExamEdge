@@ -34,6 +34,9 @@ import ExamInstructions from "./components/Student-ui/ExamInstructions";
 
 /* RESULTS */
 import StudentResults from "./components/Teacher-ui/StudentResults";
+import ExamResults from "./components/Teacher-ui/ExamResults";
+import StudentResult from "./components/Student-ui/StudentResult";
+import ExamStartCountdown from "./components/Student-ui/ExamStartCountdown";
 
 /* CLASS JOIN */
 import StudentClassLogin from "./components/Student-ui/StudentClassLogin";
@@ -72,10 +75,13 @@ return ( <BrowserRouter> <Routes>
     {/* STUDENT EXAM */}
     <Route path="/attempt-exams" element={<AttemptExam />} />
     <Route path="/exam-instructions/:examId" element={<ExamInstructions />} />
+    <Route path="/exam-countdown/:examId" element={<ExamStartCountdown />} />
     <Route path="/attempt-exam/:examId" element={<AttemptExamPage />} />
 
     {/* RESULTS */}
     <Route path="/student-results/:examId" element={<StudentResults />} />
+    <Route path="/StudentResults" element={<StudentResult />} />
+    <Route path="/exam-results/:examId" element={<ExamResults />} />
 
     {/* CLASS JOIN */}
     <Route path="/class-login/:classCode" element={<StudentClassLogin />} />

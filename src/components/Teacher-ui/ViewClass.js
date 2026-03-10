@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import Toast      from "../Toast";
+import useToast   from "../useToast";
+import PopupModal from "../PopupModal";
 import "./ViewClass.css";
 
 function ViewClass() {
   const { id } = useParams();
   const [cls, setCls] = useState(null);
+  const { toasts, showToast, removeToast } = useToast();
+  const [deleteModal, setDeleteModal] = useState({ open: false, targetId: null });
 
   /* ================= FETCH CLASS ================= */
   const fetchClass = async () => {
@@ -15,56 +20,41 @@ function ViewClass() {
 
   useEffect(() => {
     fetchClass();
+    // eslint-disable-next-line
   }, [id]);
 
   if (!cls) return <p>Loading...</p>;
 
-  // ✅ SORT STUDENTS BY ROLL NO
-  const sortedStudents = [...cls.students].sort(
-    (a, b) => a.rollNo - b.rollNo
-  );
+  const sortedStudents = [...cls.students].sort((a, b) => a.rollNo - b.rollNo);
 
   /* ================= EXPORT CSV ================= */
   const exportStudents = () => {
     if (sortedStudents.length === 0) {
-      alert("No students to export");
+      showToast("No students to export.", "warning");
       return;
     }
 
     let csv = "Roll No,Enrollment No,Student Name,Password\n";
-
     sortedStudents.forEach((s) => {
       csv += `${s.rollNo},${s.enrollment},${s.name},${s.password}\n`;
     });
 
-    const blob = new Blob([csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-
     link.href = url;
     link.setAttribute("download", `${cls.className}_students.csv`);
-
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("Student list exported!", "success");
   };
 
   /* ================= DELETE STUDENT ================= */
-  const deleteStudent = async (studentId) => {
-    const confirm = window.confirm(
-      "Are you sure you want to remove this student?"
-    );
-    if (!confirm) return;
-
-    await fetch(
-      `http://localhost:5000/api/class/${id}/student/${studentId}`,
-      { method: "DELETE" }
-    );
-
-    fetchClass(); // reload
+  const confirmDeleteStudent = async (studentId) => {
+    await fetch(`http://localhost:5000/api/class/${id}/student/${studentId}`, { method: "DELETE" });
+    fetchClass();
+    showToast("Student removed.", "info");
   };
 
   /* ================= EDIT STUDENT ================= */
@@ -74,28 +64,23 @@ function ViewClass() {
     const password = prompt("Enter Password", student.password);
 
     if (!name || !rollNo || !password) {
-      alert("All fields are required");
+      showToast("All fields are required.", "warning");
       return;
     }
 
-    await fetch(
-      `http://localhost:5000/api/class/${id}/student/${student._id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          rollNo,
-          password,
-        }),
-      }
-    );
+    await fetch(`http://localhost:5000/api/class/${id}/student/${student._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, rollNo, password }),
+    });
 
-    fetchClass(); // reload
+    fetchClass();
+    showToast("Student updated!", "success");
   };
 
   return (
     <div className="view-class-container">
+      <Toast toasts={toasts} removeToast={removeToast} />
       <h2>Class Details</h2>
 
       <div>
@@ -107,17 +92,11 @@ function ViewClass() {
 
       <div className="class-link-box">
         <p><b>Class Join Link:</b></p>
-        <input
-          value={`http://localhost:3000/join-class/${id}`}
-          readOnly
-        />
-        <button
-          onClick={() =>
-            navigator.clipboard.writeText(
-              `http://localhost:3000/join-class/${id}`
-            )
-          }
-        >
+        <input value={`http://localhost:3000/join-class/${id}`} readOnly />
+        <button onClick={() => {
+          navigator.clipboard.writeText(`http://localhost:3000/join-class/${id}`);
+          showToast("Link copied to clipboard!", "success");
+        }}>
           Copy Link
         </button>
       </div>
@@ -126,9 +105,7 @@ function ViewClass() {
 
       <div className="export-row">
         <h3>Joined Students ({sortedStudents.length})</h3>
-        <button className="export-btn" onClick={exportStudents}>
-          Export Student List
-        </button>
+        <button className="export-btn" onClick={exportStudents}>Export Student List</button>
       </div>
 
       {sortedStudents.length === 0 ? (
@@ -144,7 +121,6 @@ function ViewClass() {
               <th>Actions</th>
             </tr>
           </thead>
-
           <tbody>
             {sortedStudents.map((s) => (
               <tr key={s._id}>
@@ -153,25 +129,30 @@ function ViewClass() {
                 <td>{s.name}</td>
                 <td>{s.password}</td>
                 <td>
-                  <button
-                    className="edit-btn"
-                    onClick={() => editStudent(s)}
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    className="delete-btn"
-                    onClick={() => deleteStudent(s._id)}
-                  >
-                    Delete
-                  </button>
+                  <button className="edit-btn" onClick={() => editStudent(s)}>Edit</button>
+                  <button className="delete-btn" onClick={() => setDeleteModal({ open: true, targetId: s._id })}>Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      {/* Delete Student Confirmation */}
+      <PopupModal
+        isOpen={deleteModal.open}
+        type="error"
+        title="Remove Student?"
+        message="Are you sure you want to remove this student from the class?"
+        confirmText="Yes, Remove"
+        cancelText="Cancel"
+        confirmColor="#dc2626"
+        onConfirm={async () => {
+          await confirmDeleteStudent(deleteModal.targetId);
+          setDeleteModal({ open: false, targetId: null });
+        }}
+        onCancel={() => setDeleteModal({ open: false, targetId: null })}
+      />
     </div>
   );
 }

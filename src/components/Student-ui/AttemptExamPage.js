@@ -1,362 +1,291 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Toast      from "../Toast";
+import useToast   from "../useToast";
+import PopupModal from "../PopupModal";
 import "./AttemptExamPage.css";
 
 function AttemptExamPage() {
-
-const { examId } = useParams();
-const navigate = useNavigate();
-const checked = useRef(false);
-
-const [questions,setQuestions] = useState([]);
-const [currentIndex,setCurrentIndex] = useState(0);
-const [answers,setAnswers] = useState({});
-const [timeLeft,setTimeLeft] = useState(0);
-const [submitted,setSubmitted] = useState(false);
-
-/* 🔐 Instruction Check */
-
-useEffect(()=>{
-
-if(checked.current) return;
-
-const accepted = localStorage.getItem("instructionAccepted");
-
-if(accepted !== examId){
-navigate("/attempt-exams");
-}
-
-checked.current = true;
-
-},[examId,navigate]);
-
-/* 📥 Fetch Exam + Questions */
-
-useEffect(()=>{
-
-const fetchData = async()=>{
-
-try{
-
-const examRes = await fetch("http://localhost:5000/api/exams");
-const exams = await examRes.json();
-const exam = exams.find(e => e._id === examId);
-
-if(!exam){
-alert("Exam not found");
-navigate("/attempt-exams");
-return;
-}
-
-/* duration timer */
-
-setTimeLeft(exam.duration * 60);
-
-/* QUESTIONS */
-
-const res = await fetch(`http://localhost:5000/api/questions/${examId}`);
-const data = await res.json();
-
-setQuestions(data);
-
-}
-catch(err){
-
-console.log(err);
-alert("Failed to load exam");
-navigate("/attempt-exams");
-
-}
-
-};
-
-fetchData();
-
-},[examId,navigate]);
-
-/* ⏳ TIMER */
-
-useEffect(()=>{
-
-if(submitted) return;
-
-if(timeLeft <= 0){
-
-submitExam(true);
-return;
-
-}
-
-const timer = setInterval(()=>{
-setTimeLeft(prev => prev - 1);
-},1000);
-
-return ()=>clearInterval(timer);
-
-},[timeLeft,submitted]);
-
-/* 🚫 PREVENT REFRESH */
-
-useEffect(()=>{
-
-const handleBeforeUnload = (e)=>{
-
-if(!submitted){
-e.preventDefault();
-e.returnValue="";
-}
-
-};
-
-window.addEventListener("beforeunload",handleBeforeUnload);
-
-return ()=>window.removeEventListener("beforeunload",handleBeforeUnload);
-
-},[submitted]);
-
-/* 🚫 TAB SWITCH WARNING */
-
-useEffect(()=>{
-
-const handleVisibility = ()=>{
-
-if(document.hidden && !submitted){
-alert("Warning: Do not switch tabs during the exam!");
-}
-
-};
-
-document.addEventListener("visibilitychange",handleVisibility);
-
-return ()=>document.removeEventListener("visibilitychange",handleVisibility);
-
-},[submitted]);
-
-/* SELECT ANSWER */
-
-const handleSelect = (qid,option)=>{
-
-setAnswers(prev => ({
-...prev,
-[qid]:option
-}));
-
-};
-
-/* NAVIGATION */
-
-const prevQuestion = ()=>{
-
-if(currentIndex > 0){
-setCurrentIndex(currentIndex - 1);
-}
-
-};
-
-const nextQuestion = ()=>{
-
-if(currentIndex < questions.length - 1){
-setCurrentIndex(currentIndex + 1);
-}
-
-};
-
-/* SUBMIT EXAM */
-
-const submitExam = async(auto=false)=>{
-
-if(submitted) return;
-
-const attempted = Object.keys(answers).length;
-const unattempted = questions.length - attempted;
-
-if(!auto && unattempted > 0){
-
-const ok = window.confirm(
-`You have ${unattempted} unanswered question(s).\nDo you want to submit the exam?`
-);
-
-if(!ok) return;
-
-}
-
-try{
-
-/* SEND ANSWERS */
-
-await fetch("http://localhost:5000/api/exams/submit",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-examId:examId,
-answers:answers
-})
-
-});
-
-}
-catch(err){
-console.log(err);
-}
-
-setSubmitted(true);
-
-localStorage.removeItem("instructionAccepted");
-
-if(auto){
-alert("Time is over. Exam submitted automatically.");
-}else{
-alert("Exam submitted successfully");
-}
-
-navigate("/StudentHome");
-
-};
-
-/* TIMER FORMAT */
-
-const minutes = Math.floor(timeLeft/60);
-const seconds = timeLeft % 60;
-
-if(questions.length === 0){
-return <p style={{textAlign:"center"}}>Loading questions...</p>;
-}
-
-const currentQuestion = questions[currentIndex];
-
-const attemptedCount = Object.keys(answers).length;
-const unattemptedCount = questions.length - attemptedCount;
-
-return(
-
-<div className="attempt-exam-layout">
-
-{/* LEFT PANEL */}
-
-<div className="attempt-exam-page">
-
-<h2 className="exam-title">Online Examination</h2>
-
-<div className={`timer ${timeLeft <= 120 ? "danger" : ""}`}>
-⏳ Time Left: {minutes}:{seconds < 10 ? "0" : ""}{seconds}
-</div>
-
-<div className="question-box">
-
-<p>
-<b>Q{currentIndex + 1}.</b> {currentQuestion.questionText}
-</p>
-
-{currentQuestion.options.map((op,i)=>(
-
-<label key={i} className="option">
-
-<input
-type="radio"
-name={currentQuestion._id}
-checked={answers[currentQuestion._id] === op}
-onChange={()=>handleSelect(currentQuestion._id,op)}
-/>
-
-{op}
-
-</label>
-
-))}
-
-</div>
-
-<div className="nav-btns">
-
-<div className="nav-left">
-
-<button
-className="prev-btn"
-disabled={currentIndex === 0}
-onClick={prevQuestion}
-
->
-
-Previous </button>
-
-<button
-className="next-btn"
-disabled={currentIndex === questions.length - 1}
-onClick={nextQuestion}
-
->
-
-Next </button>
-
-</div>
-
-<button
-className="submit-btn"
-onClick={()=>submitExam(false)}
-
->
-
-Submit Exam </button>
-
-</div>
-
-</div>
-
-{/* RIGHT PANEL */}
-
-<div className="exam-status-panel">
-
-<div className="palette-section">
-
-<h3 className="palette-title">Questions</h3>
-
-<div className="question-palette">
-
-{questions.map((q,index)=>(
-
-<div
-key={q._id}
-onClick={()=>setCurrentIndex(index)}
-className={`palette-box
-${answers[q._id] ? "attempted" : "not-attempted"}
-${currentIndex === index ? "active" : ""}`}
->
-
-{index + 1}
-
-</div>
-
-))}
-
-</div>
-
-</div>
-
-<h3>Status</h3>
-
-<div className="status attempted">
-Attempted: <b>{attemptedCount}</b>
-</div>
-
-<div className="status unattempted">
-Unattempted: <b>{unattemptedCount}</b>
-</div>
-
-<div className="status total">
-Total Questions: <b>{questions.length}</b>
-</div>
-
-</div>
-
-</div>
-
-);
-
+  const { examId } = useParams();
+  const navigate = useNavigate();
+  const checked = useRef(false);
+
+  const [questions, setQuestions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [reviewStatus, setReviewStatus] = useState({});
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [tabWarnings, setTabWarnings] = useState(0);
+  const [showTabBanner, setShowTabBanner] = useState(false);
+
+  const { toasts, showToast, removeToast } = useToast();
+
+  /* 🔐 Instruction Check */
+  useEffect(() => {
+    if (checked.current) return;
+    const accepted = localStorage.getItem("instructionAccepted");
+    if (accepted !== examId) {
+      navigate("/attempt-exams");
+    }
+    checked.current = true;
+  }, [examId, navigate]);
+
+  /* 📥 Fetch Exam + Questions */
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const examRes = await fetch("http://localhost:5000/api/exams");
+        const exams = await examRes.json();
+        const exam = exams.find(e => e._id === examId);
+
+        if (!exam) {
+          showToast("Exam not found. Redirecting...", "error");
+          setTimeout(() => navigate("/attempt-exams"), 1500);
+          return;
+        }
+
+        setTimeLeft(exam.duration * 60);
+
+        const res = await fetch(`http://localhost:5000/api/questions/${examId}`);
+        const data = await res.json();
+        setQuestions(data);
+      } catch (err) {
+        console.log(err);
+        showToast("Failed to load exam. Please try again.", "error");
+        setTimeout(() => navigate("/attempt-exams"), 1500);
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line
+  }, [examId, navigate]);
+
+  /* ⏳ TIMER */
+  useEffect(() => {
+    if (submitted || timeLeft === null) return;
+    if (timeLeft <= 0) {
+      submitExam(true);
+      return;
+    }
+    const timer = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line
+  }, [timeLeft, submitted]);
+
+  /* 🚫 PREVENT REFRESH */
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!submitted) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [submitted]);
+
+  /* 🚫 TAB SWITCH WARNING — banner, not alert */
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden && !submitted) {
+        setTabWarnings(prev => prev + 1);
+        setShowTabBanner(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [submitted]);
+
+  const stripPrefix = (text) => {
+    if (!text) return "";
+    return text.replace(/^\s*[\(\[]?[A-Da-d][\)\]\.]\s*/, "").trim();
+  };
+
+  const handleSelect = (qid, option) => {
+    setAnswers(prev => ({ ...prev, [qid]: option }));
+  };
+
+  const clearResponse = (qid) => {
+    setAnswers(prev => {
+      const newA = { ...prev };
+      delete newA[qid];
+      return newA;
+    });
+  };
+
+  const toggleReview = (qid) => {
+    setReviewStatus(prev => ({ ...prev, [qid]: !prev[qid] }));
+  };
+
+  const prevQuestion = () => { if (currentIndex > 0) setCurrentIndex(currentIndex - 1); };
+  const nextQuestion = () => { if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1); };
+
+  /* SUBMIT EXAM */
+  const submitExam = async (auto = false) => {
+    if (submitted) return;
+    setSubmitted(true);
+    localStorage.removeItem("instructionAccepted");
+
+    try {
+      const student = JSON.parse(localStorage.getItem("student")) || {};
+      await fetch("http://localhost:5000/api/exams/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          examId,
+          answers,
+          studentId: student.enrollment || "Unknown"
+        })
+      });
+    } catch (err) {
+      console.log(err);
+    }
+
+    if (auto) {
+      showToast("Time is up! Exam auto-submitted. ⏰", "warning", 5000);
+    } else {
+      showToast("Exam submitted successfully! 🎉", "success", 4000);
+    }
+
+    setTimeout(() => navigate("/StudentHome"), 2000);
+  };
+
+  if (questions.length === 0) {
+    return <div className="loading-screen"><div className="spinner"></div></div>;
+  }
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const currentQuestion = questions[currentIndex];
+  const attemptedCount = Object.keys(answers).length;
+  const reviewCount = Object.values(reviewStatus).filter(Boolean).length;
+  const unattemptedCount = questions.length - attemptedCount;
+
+  return (
+    <div className="attempt-exam-layout">
+      <Toast toasts={toasts} removeToast={removeToast} />
+
+      {showTabBanner && (
+        <div className="tab-warn-banner">
+          ⛔ Warning: Tab switching detected! ({tabWarnings} time{tabWarnings > 1 ? "s" : ""}) — This will be reported to your teacher.
+          <button onClick={() => setShowTabBanner(false)}>✕</button>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="main-exam-area">
+        <div className="exam-header">
+          <h2 className="exam-title">Online Examination</h2>
+          <div className={`timer-badge ${timeLeft <= 120 ? 'danger-pulse' : ''}`}>
+            ⏱️ {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
+          </div>
+        </div>
+
+        <div className="question-container">
+          <div className="q-header">
+            <span className="q-number">Question {currentIndex + 1} of {questions.length}</span>
+            <div className="q-actions">
+              <span className={`review-toggle ${reviewStatus[currentQuestion._id] ? 'active' : ''}`} onClick={() => toggleReview(currentQuestion._id)}>
+                {reviewStatus[currentQuestion._id] ? '🚩 Marked' : '🏁 Mark for Review'}
+              </span>
+            </div>
+          </div>
+
+          <h3 className="q-text">{currentQuestion.questionText}</h3>
+
+          <div className="options-grid">
+            {["A", "B", "C", "D"].map((letter, i) => {
+              const rawOption = currentQuestion.options[i];
+              if (!rawOption) return null;
+              const cleanOption = stripPrefix(rawOption);
+              const isSelected = answers[currentQuestion._id] === rawOption;
+
+              return (
+                <div
+                  key={i}
+                  className={`option-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleSelect(currentQuestion._id, rawOption)}
+                >
+                  <div className="opt-letter">{letter}</div>
+                  <div className="opt-text">{cleanOption}</div>
+                  <div className="opt-radio">
+                    <div className={`radio-inner ${isSelected ? 'active' : ''}`}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bottom-nav-bar">
+          <div className="nav-group">
+            <button className="nav-btn prev" disabled={currentIndex === 0} onClick={prevQuestion}>← Previous</button>
+            <button className="nav-btn clear" onClick={() => clearResponse(currentQuestion._id)} disabled={!answers[currentQuestion._id]}>Clear Response</button>
+            <button className="nav-btn next" disabled={currentIndex === questions.length - 1} onClick={nextQuestion}>Next →</button>
+          </div>
+          <button className="submit-exam-btn" onClick={() => setShowSubmitModal(true)}>
+            Submit Exam
+          </button>
+        </div>
+      </div>
+
+      {/* Right Side Panel */}
+      <div className="side-panel">
+        <div className="status-summary">
+          <h3>Exam Status</h3>
+          <div className="summary-grid">
+            <div className="s-box alt-attempted"><b>{attemptedCount}</b> Answered</div>
+            <div className="s-box alt-unattempted"><b>{unattemptedCount}</b> Unanswered</div>
+            <div className="s-box alt-review"><b>{reviewCount}</b> Marked</div>
+          </div>
+        </div>
+
+        <div className="palette-container">
+          <h3>Question Palette</h3>
+          <div className="palette-grid">
+            {questions.map((q, index) => {
+              const isAttempted = !!answers[q._id];
+              const isReview = !!reviewStatus[q._id];
+              const isActive = currentIndex === index;
+              const classNames = [
+                "palette-btn",
+                isAttempted ? "answered" : "unanswered",
+                isReview ? "review" : "",
+                isActive ? "current" : ""
+              ].filter(Boolean).join(" ");
+
+              return (
+                <button key={q._id} onClick={() => setCurrentIndex(index)} className={classNames}>
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Submit Confirmation PopupModal */}
+      <PopupModal
+        isOpen={showSubmitModal}
+        type="warning"
+        title="Submit Exam?"
+        message="Once submitted, you cannot change your answers."
+        details={[
+          { icon: "✅", label: "Answered",     value: `${attemptedCount} questions`,   color: "#16a34a" },
+          { icon: "❌", label: "Not Answered", value: `${unattemptedCount} questions`, color: "#dc2626" },
+        ]}
+        confirmText="Yes, Submit"
+        cancelText="Go Back"
+        confirmColor="#16a34a"
+        onConfirm={() => { setShowSubmitModal(false); submitExam(false); }}
+        onCancel={() => setShowSubmitModal(false)}
+      />
+    </div>
+  );
 }
 
 export default AttemptExamPage;

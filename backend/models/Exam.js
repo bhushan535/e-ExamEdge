@@ -58,6 +58,8 @@ ref:"Class",
 required:true
 },
 
+marksPerQuestion: { type: Number, default: 1 },
+
 examCode:{
 type:String
 }, // students enter before exam

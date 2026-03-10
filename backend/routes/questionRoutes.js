@@ -30,20 +30,32 @@ router.post("/questions", async (req, res) => {
 
 // GET QUESTIONS BY EXAM
 router.get("/questions/:examId", async (req, res) => {
-  const questions = await Question.find({ examId: req.params.examId });
-  res.json(questions);
+  try {
+    const questions = await Question.find({ examId: req.params.examId });
+    res.json(questions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // UPDATE QUESTION
 router.put("/questions/:id", async (req, res) => {
-  await Question.findByIdAndUpdate(req.params.id, req.body);
-  res.json({ success: true });
+  try {
+    await Question.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // DELETE QUESTION
 router.delete("/questions/:id", async (req, res) => {
-  await Question.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+  try {
+    await Question.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

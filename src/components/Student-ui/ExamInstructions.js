@@ -1,160 +1,163 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./ExamInstructions.css";
+import Toast    from "../Toast";
+import useToast from "../useToast";
 
-function ExamInstructions(){
+function ExamInstructions() {
+  const { examId } = useParams();
+  const navigate   = useNavigate();
 
-const { examId } = useParams();
-const navigate = useNavigate();
+  const [agree,       setAgree]       = useState(false);
+  const [exam,        setExam]        = useState(null);
+  const [enteredCode, setEnteredCode] = useState("");
+  const [codeError,   setCodeError]   = useState("");
+  const [loading,     setLoading]     = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
 
-const [agree,setAgree] = useState(false);
-const [exam,setExam] = useState(null);
-const [enteredCode,setEnteredCode] = useState("");
+  const { toasts, showToast, removeToast } = useToast();
 
-/* FETCH EXAM DETAILS */
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/exams/${examId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch exam");
+        return res.json();
+      })
+      .then((data) => {
+        setExam(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [examId]);
 
-useEffect(()=>{
+  const startExam = async () => {
+    if (!exam) return;
+    if (!enteredCode.trim()) {
+      setCodeError("Please enter the exam code given by your teacher.");
+      return;
+    }
 
-fetch("http://localhost:5000/api/exams")
-.then(res=>res.json())
-.then(data=>{
+    setIsVerifying(true);
+    setCodeError("");
 
-const found = data.find(e => e._id === examId);
-setExam(found);
+    try {
+      const student = JSON.parse(localStorage.getItem("student")) || {};
+      const res = await fetch("http://localhost:5000/api/exams/verify-code", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          examId,
+          code: enteredCode.trim(),
+          studentId: student.enrollment
+        }),
+      });
+      const data = await res.json();
 
-});
+      if (!data.success) {
+        setCodeError(data.message || "Invalid code. Please check and try again.");
+        showToast(data.message || "Invalid code.", "error");
+        return;
+      }
 
-},[examId]);
+      localStorage.setItem("instructionAccepted", examId);
+      navigate(`/exam-countdown/${examId}`);
+    } catch (err) {
+      console.error(err);
+      showToast("Server error. Please try again.", "error");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
-/* VERIFY CODE + START EXAM */
+  if (loading) {
+    return (
+      <div className="instruction-page loading-state">
+        <div className="spinner"></div>
+        <p>Loading instructions...</p>
+      </div>
+    );
+  }
 
-const startExam = async ()=>{
+  return (
+    <div className="instruction-page">
+      <Toast toasts={toasts} removeToast={removeToast} />
 
-if(!exam) return;
+      <div className="instruction-card">
+        <div className="header-gradient">
+          <h2>Examination Instructions</h2>
+          {exam && (
+            <div className="exam-meta">
+              <span>{exam.examName}</span>
+              <span className="dot">•</span>
+              <span>{exam.subject}</span>
+              <span className="dot">•</span>
+              <span>{exam.duration} mins</span>
+            </div>
+          )}
+        </div>
 
-try{
+        <div className="instruction-body">
+          <div className="rules-section">
+            <h3>📝 Please read carefully before starting</h3>
+            <ul className="instruction-list">
+              <li>The total duration of the examination is fixed and will not be extended.</li>
+              <li>Once the examination starts, it cannot be paused or restarted.</li>
+              <li>Do not refresh or close the browser during the exam.</li>
+              <li>Each question carries equal marks unless specified.</li>
+              <li>Only one option is correct for each question.</li>
+              <li>The exam will automatically submit when time expires.</li>
+              <li>Any malpractice may result in disqualification.</li>
+              <li>Ensure a stable internet connection before starting.</li>
+              <li>The institution is not responsible for power or network failures.</li>
+            </ul>
+          </div>
 
-const res = await fetch("http://localhost:5000/api/exams/verify-code",{
+          <div className="action-section">
+            <div className="code-input-group">
+              <label>Exam Access Code</label>
+              <input
+                type="text"
+                placeholder="Enter 6-digit code"
+                value={enteredCode}
+                onChange={(e) => {
+                  setEnteredCode(e.target.value);
+                  setCodeError("");
+                }}
+                className={codeError ? "input-error" : ""}
+                maxLength={10}
+              />
+              {codeError && <p className="code-error-text">⚠️ {codeError}</p>}
+            </div>
 
-method:"POST",
+            <div className="agree-box">
+              <label className="checkbox-container">
+                <input
+                  type="checkbox"
+                  checked={agree}
+                  onChange={(e) => setAgree(e.target.checked)}
+                />
+                <span className="checkmark"></span>
+                <span className="agree-text">
+                  I have read and understood all instructions and agree to follow them.
+                </span>
+              </label>
+            </div>
 
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-examId:examId,
-code:enteredCode.trim()
-})
-
-});
-
-const data = await res.json();
-
-if(!data.success){
-
-alert(data.message || "Invalid Code");
-return;
-
-}
-
-/* SAVE INSTRUCTION ACCEPTED */
-
-localStorage.setItem("instructionAccepted",examId);
-
-/* NAVIGATE TO EXAM */
-
-navigate(`/attempt-exam/${examId}`);
-
-}
-catch(err){
-
-console.error(err);
-alert("Server error while verifying code");
-
-}
-
-};
-
-return(
-
-<div className="instruction-page">
-
-<h2>Examination Instructions</h2>
-
-{exam && (
-
-<div className="exam-details">
-
-<p><b>Exam:</b> {exam.examName}</p>
-<p><b>Subject:</b> {exam.subject}</p>
-<p><b>Duration:</b> {exam.duration} minutes</p>
-
-</div>
-
-)}
-
-<ul className="instruction-list">
-
-<li>The total duration of the examination is fixed and will not be extended.</li>
-<li>Once the examination starts, it cannot be paused or restarted.</li>
-<li>Do not refresh or close the browser during the exam.</li>
-<li>Each question carries equal marks unless specified.</li>
-<li>Only one option is correct for each question.</li>
-<li>The exam will automatically submit when time expires.</li>
-<li>Any malpractice may result in disqualification.</li>
-<li>Ensure a stable internet connection before starting.</li>
-<li>The institution is not responsible for power or network failures.</li>
-
-</ul>
-
-{/* EXAM CODE INPUT */}
-
-<div className="exam-code-box">
-
-<label>Enter Exam Code</label>
-
-<input
-type="text"
-placeholder="Enter exam code provided by teacher"
-value={enteredCode}
-onChange={(e)=>setEnteredCode(e.target.value)}
-/>
-
-</div>
-
-{/* AGREEMENT */}
-
-<div className="agree-box">
-
-<input
-type="checkbox"
-id="agree"
-checked={agree}
-onChange={(e)=>setAgree(e.target.checked)}
-/>
-
-<label htmlFor="agree">
-I have read and understood all the instructions and agree to follow them.
-</label>
-
-</div>
-
-<button
-className="start-btn"
-disabled={!agree}
-onClick={startExam}
-
->
-
-Start Examination
-
-</button>
-
-</div>
-
-);
-
+            <button
+              className={`start-btn ${(!agree || !enteredCode.trim() || isVerifying) ? "disabled" : ""}`}
+              disabled={!agree || !enteredCode.trim() || isVerifying}
+              onClick={startExam}
+            >
+              {isVerifying ? "Verifying..." : "Start Examination"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default ExamInstructions;

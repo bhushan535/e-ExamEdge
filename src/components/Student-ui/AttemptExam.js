@@ -28,25 +28,43 @@ setExams(published);
 
 /* EXAM STATUS */
 
-const getStatus = (exam)=>{
+const getStatus = (exam) => {
+  const now = new Date();
 
-const now = new Date();
-const examDay = new Date(exam.examDate);
+  // Compare just the dates first
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const examOnlyDate = new Date(exam.examDate);
+  examOnlyDate.setHours(0,0,0,0);
 
-if(now.toDateString() === examDay.toDateString()){
-return "AVAILABLE";
-}
+  if (examOnlyDate < today) return "ENDED";
+  if (examOnlyDate > today) return "UPCOMING";
 
-if(now < examDay){
-return "UPCOMING";
-}
+  // It's today. Check exact times if available.
+  if (exam.startTime) {
+    const [startHour, startMin] = exam.startTime.split(':').map(Number);
+    const examStart = new Date(exam.examDate);
+    examStart.setHours(startHour, startMin, 0, 0);
 
-return "ENDED";
+    let examEnd = null;
+    if (exam.endTime) {
+       const [endHour, endMin] = exam.endTime.split(':').map(Number);
+       examEnd = new Date(exam.examDate);
+       examEnd.setHours(endHour, endMin, 0, 0);
+    } else if (exam.duration) {
+       examEnd = new Date(examStart.getTime() + exam.duration * 60000);
+    }
 
+    if (now < examStart) return "UPCOMING";
+    if (examEnd && now > examEnd) return "ENDED";
+    return "AVAILABLE";
+  }
+
+  return "AVAILABLE";
 };
 
 if(!student){
-return <h2>Please login again</h2>;
+return <div className="attempt-exam-page"><h2>Please login again</h2></div>;
 }
 
 return(

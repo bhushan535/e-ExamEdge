@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Toast    from "../Toast";
+import useToast from "../useToast";
 import "./CreateClass.css";
 
 function CreateClass() {
   const navigate = useNavigate();
+  const { toasts, showToast, removeToast } = useToast();
 
   const [className, setClassName] = useState("");
   const [branch, setBranch] = useState("");
@@ -11,11 +14,8 @@ function CreateClass() {
   const [semester, setSemester] = useState("");
 
   /* 🔹 Static Data */
-
   const branchOptions = ["CM", "EJ", "CE", "ME", "EE"];
-
   const yearOptions = ["First Year", "Second Year", "Third Year"];
-
   const semesterOptions = {
     "First Year": ["1st Sem", "2nd Sem"],
     "Second Year": ["4th Sem"],
@@ -25,12 +25,7 @@ function CreateClass() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {
-      className,
-      branch,
-      year,
-      semester,
-    };
+    const payload = { className, branch, year, semester };
 
     const res = await fetch("http://localhost:5000/api/classes", {
       method: "POST",
@@ -41,20 +36,20 @@ function CreateClass() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.message || "Failed to create class");
+      showToast(data.message || "Failed to create class", "error");
       return;
     }
 
-    alert("Class Created Successfully");
-    navigate("/Classes");
+    showToast("Class created successfully! 🎉", "success");
+    setTimeout(() => navigate("/Classes"), 1500);
   };
 
   return (
     <div className="create-class-container">
+      <Toast toasts={toasts} removeToast={removeToast} />
       <h2>Create Class</h2>
 
       <form onSubmit={handleSubmit}>
-        {/* Class Name */}
         <input
           placeholder="Class Name"
           value={className}
@@ -62,7 +57,6 @@ function CreateClass() {
           required
         />
 
-        {/* Branch Dropdown */}
         <select
           value={branch}
           onChange={(e) => {
@@ -74,13 +68,10 @@ function CreateClass() {
         >
           <option value="">Select Branch</option>
           {branchOptions.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
+            <option key={b} value={b}>{b}</option>
           ))}
         </select>
 
-        {/* Year Dropdown */}
         {branch && (
           <select
             value={year}
@@ -92,27 +83,20 @@ function CreateClass() {
           >
             <option value="">Select Year</option>
             {yearOptions.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
+              <option key={y} value={y}>{y}</option>
             ))}
           </select>
         )}
 
-        {/* Semester Dropdown */}
         {year && (
           <select
             value={semester}
-            onChange={(e) => {
-              setSemester(e.target.value);
-            }}
+            onChange={(e) => setSemester(e.target.value)}
             required
           >
             <option value="">Select Semester</option>
             {semesterOptions[year].map((sem) => (
-              <option key={sem} value={sem}>
-                {sem}
-              </option>
+              <option key={sem} value={sem}>{sem}</option>
             ))}
           </select>
         )}
