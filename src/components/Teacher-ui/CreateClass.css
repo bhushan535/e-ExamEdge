@@ -1,68 +1,248 @@
-/* Page background */
-body {
-  background-color: #f4f6f9;
+.cc-premium-overlay {
+    min-height: 100vh;
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.1), transparent),
+                var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    color: white;
 }
 
-/* Main container */
-.create-class-container {
-  max-width: 420px;
-  margin: 40px auto;
-  padding: 25px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
+.cc-nav-top {
+    margin-bottom: 2rem;
+    max-width: 1200px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-/* Heading */
-.create-class-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
+.cc-premium-container {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 4rem;
+    max-width: 1200px;
+    width: 100%;
+    margin: auto;
+    align-items: center;
 }
 
-/* Form */
-.create-class-container form {
-  display: flex;
-  flex-direction: column;
+/* Sidebar Visuals */
+.cc-visual-sidebar {
+    padding-right: 2rem;
 }
 
-/* Inputs & dropdowns */
-.create-class-container input,
-.create-class-container select {
-  padding: 10px;
-  margin-bottom: 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  outline: none;
-  transition: border 0.2s;
+.cc-brand-badge {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
-.create-class-container input:focus,
-.create-class-container select:focus {
-  border-color: #4a90e2;
+.cc-visual-sidebar h1 {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-/* Button */
-.create-class-container button {
-  margin-top: 10px;
-  padding: 11px;
-  background-color: #4a90e2;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.cc-visual-sidebar h1 span {
+    color: #818cf8;
 }
 
-.create-class-container button:hover {
-  background-color: #357bd8;
+.cc-visual-sidebar p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+    max-width: 400px;
 }
 
-/* Dropdown placeholder color */
-.create-class-container select option[value=""] {
-  color: #888;
+.cc-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.cc-step {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    opacity: 0.4;
+    transition: all 0.4s;
+}
+
+.cc-step.active {
+    opacity: 1;
+    transform: translateX(10px);
+}
+
+.step-num {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.cc-step.active .step-num {
+    background: var(--primary-gradient);
+    border-color: transparent;
+}
+
+/* Form Styling */
+.glass-premium {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 40px;
+    padding: 3.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.cc-form-header {
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.pulse-icon {
+    font-size: 2.5rem;
+    color: #818cf8;
+    margin-bottom: 1rem;
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.cc-form-header h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.cc-premium-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+}
+
+.cc-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.cc-input-wrapper label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cc-input-wrapper input, 
+.cc-input-wrapper select {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.1rem 1.5rem;
+    border-radius: 18px;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s;
+    outline: none;
+}
+
+.cc-input-wrapper input:focus, 
+.cc-input-wrapper select:focus {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.cc-grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.cc-launch-btn {
+    margin-top: 1rem;
+    background: var(--primary-gradient);
+    padding: 1.2rem;
+    border-radius: 20px;
+    border: none;
+    color: white;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    transition: all 0.4s;
+    box-shadow: 0 12px 24px -6px rgba(99, 102, 241, 0.4);
+}
+
+.cc-launch-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px -8px rgba(99, 102, 241, 0.5);
+}
+
+.cc-launch-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .cc-premium-container {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+    .cc-visual-sidebar {
+        text-align: center;
+        padding-right: 0;
+    }
+    .cc-visual-sidebar p {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .cc-steps {
+        display: none;
+    }
+    .cc-visual-sidebar h1 {
+        font-size: 2.8rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .cc-grid-row {
+        grid-template-columns: 1fr;
+    }
+    .glass-premium {
+        padding: 2rem;
+    }
 }

@@ -49,85 +49,118 @@ router.post("/student/login", async (req, res) => {
     const { enrollment, password } = req.body;
 
     if (!enrollment || !password) {
-      return res.status(400).json({ success: false, message: "All fields required" });
+      return res.status(400).json({ success: false, message: "Enrollment and password are required" });
     }
 
-    // 1. Check for Organization Student (User Model)
-    const institutionalEmail = `${enrollment.toLowerCase()}@institution.com`;
-    let user = await User.findOne({ email: institutionalEmail });
+    // 1. Find Student Profile by enrollment
+    const studentProfile = await Student.findOne({ enrollmentNo: enrollment.toUpperCase() }).populate('userId');
     
-    // If not found by email, check legacy Class model (Solo Mode)
-    let cls = null;
-    let legacyStudent = null;
-
-    if (!user) {
-      cls = await Class.findOne({ "students.enrollment": enrollment });
-      if (cls) {
-        legacyStudent = cls.students.find(s => s.enrollment === enrollment && s.password === password);
+    if (!studentProfile || !studentProfile.userId) {
+      // Fallback: Check if user exists by institutional email directly (in case profile is missing but user exists)
+      const institutionalEmail = `${enrollment.toLowerCase()}@institution.com`;
+      const user = await User.findOne({ email: institutionalEmail });
+      
+      if (!user) {
+        return res.status(401).json({ success: false, message: "Invalid enrollment or password" });
       }
-    } else {
-      // User account exists, check password
+
+      // Check password
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
          return res.status(401).json({ success: false, message: "Invalid enrollment or password" });
       }
+
+      const token = generateToken(user._id);
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          mode: user.mode,
+          enrollment: enrollment.toUpperCase()
+        }
+      });
     }
 
-    if (!user && !legacyStudent) {
+    // 2. Core Login Logic (Profile exists)
+    const user = studentProfile.userId;
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
       return res.status(401).json({ success: false, message: "Invalid enrollment or password" });
     }
 
-    // 2. Prepare User Object & Token
-    let userData = null;
+    // 3. Prepare Response
+    const token = generateToken(user._id);
     let organizationData = null;
-    let token = null;
 
-    if (user) {
-      token = generateToken(user._id);
-      userData = {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        mode: user.mode,
-        enrollment // Pass enrollment for frontend state
-      };
-      
-      if (user.organizationId) {
-        const org = await Organization.findById(user.organizationId);
-        if (org) {
-          organizationData = {
-            id: org._id,
-            name: org.name,
-            type: org.type,
-            logo: org.logo
-          };
-        }
+    if (user.organizationId) {
+      const org = await Organization.findById(user.organizationId);
+      if (org) {
+        organizationData = {
+          id: org._id,
+          name: org.name,
+          type: org.type,
+          logo: org.logo
+        };
       }
-    } else {
-      // Legacy Solo mode login (No User account yet, but valid class student)
-      // Note: In a real production app, we'd create a User account here if we want JWT.
-      // For now, let's treat enrollment as ID for token generation if needed, 
-      // or return a simpler result. But AuthContext NEEDS a token.
-      
-      return res.status(403).json({ 
-        success: false, 
-        message: "Legacy login detected. Please use regular teacher login or contact admin to migrate." 
-      });
-      // Actually, for "proper" integration, I should probably generate a token for solo students too.
     }
 
     res.json({
       success: true,
       token,
-      user: userData,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        mode: user.mode,
+        enrollment: studentProfile.enrollmentNo,
+        branch: studentProfile.branch,
+        semester: studentProfile.currentSemester
+      },
       organization: organizationData
     });
 
   } catch (err) {
     console.error("STUDENT LOGIN ERROR:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: "Server authentication error" });
   }
+});
+
+// ALIAS FOR CLASS-SPECIFIC LOGIN (Compatibility)
+router.post("/student/class-login", async (req, res) => {
+    // Redirect to main login but maintain backward compatibility if needed
+    try {
+        const { enrollment, password } = req.body;
+        // Same logic as /student/login
+        const studentProfile = await Student.findOne({ enrollmentNo: enrollment.toUpperCase() }).populate('userId');
+        
+        if (!studentProfile || !studentProfile.userId) {
+            return res.status(401).json({ success: false, message: "Invalid enrollment or password" });
+        }
+
+        const user = studentProfile.userId;
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: "Invalid enrollment or password" });
+        }
+
+        const token = generateToken(user._id);
+        res.json({
+            success: true,
+            token,
+            student: { // Note: StudentClassLogin.js expects 'student' property
+                ...user.toObject(),
+                id: user._id,
+                enrollment: studentProfile.enrollmentNo
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Server error" });
+    }
 });
 
 module.exports = router; // 🔥 THIS LINE IS MANDATORY

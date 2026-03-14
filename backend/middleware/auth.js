@@ -13,15 +13,18 @@ exports.authenticate = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log(`[AUTH DEBUG] Token Decoded - UserId: ${decoded.userId}`);
     const user = await User.findById(decoded.userId);
 
     if (!user) {
+      console.log(`[AUTH DEBUG] User not found for ID: ${decoded.userId}`);
       return res.status(401).json({
         success: false,
         message: 'User not found',
       });
     }
 
+    console.log(`[AUTH DEBUG] User Found - ID: ${user._id}, Role: ${user.role}`);
     if (user.status === 'suspended') {
       return res.status(403).json({
         success: false,
@@ -35,6 +38,11 @@ exports.authenticate = async (req, res, next) => {
     req.userMode = user.mode;
     req.organizationId = user.organizationId;
 
+    if (user.role === 'teacher') {
+        const TeacherProfile = require('../models/TeacherProfile');
+        req.teacherProfile = await TeacherProfile.findOne({ userId: user._id });
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({
@@ -45,6 +53,7 @@ exports.authenticate = async (req, res, next) => {
 };
 
 exports.isPrincipal = (req, res, next) => {
+  console.log(`[AUTH DEBUG] Principal Check - UserID: ${req.userId}, Role: ${req.userRole}`);
   if (req.userRole !== 'principal') {
     return res.status(403).json({
       success: false,

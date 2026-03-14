@@ -9,407 +9,249 @@ const User = require("../models/User");
 const Student = require("../models/Student");
 const { authenticate } = require('../middleware/auth');
 
-
 // ==============================
 // CREATE CLASS
 // ==============================
 router.post("/classes", authenticate, async (req, res) => {
   try {
     const { className, semester, branch, year } = req.body;
+    if (!className || !semester || !branch) {
+      return res.status(400).json({ success: false, message: "Class name, semester, and branch are required" });
+    }
 
-
-    if (!className || !semester || !branch || !year) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required",
-      });
+    if (req.userRole === 'teacher' && req.userMode === 'organization') {
+        if (!req.teacherProfile || req.teacherProfile.department !== branch) {
+            return res.status(403).json({
+                success: false,
+                message: `Denied: You are only authorized to create classes for the ${req.teacherProfile?.department || 'assigned'} branch.`
+            });
+        }
     }
 
     const userId = req.userId || (req.user && req.user._id);
-
     const newClass = new Class({
-      className,
-      semester,
-      branch,
-      year,
-      students: [],
-      createdBy: userId,
+      className, semester, branch, year,
+      students: [], createdBy: userId,
       mode: req.userMode || 'solo',
       organizationId: req.organizationId || null,
-      registrationOpen: true,
-      status: 'active'
+      registrationOpen: true, status: 'active'
     });
 
     await newClass.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Class created successfully",
-      class: newClass,
-    });
+    res.status(201).json({ success: true, message: "Class created successfully", class: newClass });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ==============================
-// GET ALL CLASSES (Filtered)
-// ==============================
 router.get("/classes", authenticate, async (req, res) => {
   try {
     const userId = req.userId || (req.user && req.user._id);
     const orgId = req.organizationId || null;
     let filter = {};
-
-    if (req.userRole === 'principal') {
+    if (req.userRole === 'principal' || (req.userRole === 'teacher' && req.userMode === 'organization')) {
       filter = { organizationId: orgId };
-    } else if (req.userRole === 'teacher' && req.userMode === 'organization') {
-      filter = { organizationId: orgId };
-    } else if (req.userRole === 'teacher' && req.userMode === 'solo') {
+    } else {
       filter = { createdBy: userId, mode: 'solo' };
     }
-
     const classes = await Class.find(filter).sort({ createdAt: -1 });
     res.json(classes);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// ==============================
-// GET SINGLE CLASS BY ID
-// ==============================
-router.get("/class/:id", async (req, res) => {
+router.get("/class/:id", authenticate, async (req, res) => {
   try {
     const cls = await Class.findById(req.params.id);
     if (!cls) return res.status(404).json({ message: "Class not found" });
     res.json(cls);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// ==============================
-// JOIN CLASS (WITH ROLL NO)
-// ==============================
+router.post("/class/:id/clone", authenticate, async (req, res) => {
+  try {
+    const originalClass = await Class.findById(req.params.id);
+    if (!originalClass) return res.status(404).json({ success: false, message: "Original class not found" });
+
+    if (req.userRole === 'teacher' && req.userMode === 'organization') {
+      if (!req.teacherProfile || req.teacherProfile.department !== originalClass.branch) {
+        return res.status(403).json({ success: false, message: "Denied: You can only clone classes belonging to your branch." });
+      }
+    }
+
+    const { newClassName } = req.body;
+    const clonedClass = new Class({
+      className: newClassName || `${originalClass.className} (Clone)`,
+      semester: originalClass.semester,
+      branch: originalClass.branch,
+      year: originalClass.year,
+      students: [],
+      createdBy: req.userId,
+      mode: req.userMode,
+      organizationId: req.organizationId,
+      registrationOpen: true,
+      status: 'active'
+    });
+
+    await clonedClass.save();
+    res.json({ success: true, message: "Class structure cloned successfully!", class: clonedClass });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.put("/class/:id", authenticate, async (req, res) => {
+    try {
+        const { className, branch, year, semester } = req.body;
+        const updatedClass = await Class.findByIdAndUpdate(req.params.id, { className, branch, year, semester }, { new: true });
+        if (!updatedClass) return res.status(404).json({ success: false, message: "Class not found" });
+        res.json({ success: true, message: "Class updated successfully", class: updatedClass });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.delete("/class/:id", authenticate, async (req, res) => {
+    try {
+        const cls = await Class.findById(req.params.id);
+        if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
+        const exams = await Exam.find({ classId: req.params.id });
+        const examIds = exams.map(e => e._id);
+        if (examIds.length > 0) {
+            await Result.deleteMany({ examId: { $in: examIds } });
+            await ProctorLog.deleteMany({ examId: { $in: examIds } });
+            await ExamAccess.deleteMany({ examId: { $in: examIds } });
+            await Exam.deleteMany({ classId: req.params.id });
+        }
+        await Class.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: "Class and all related data deleted successfully" });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Student Management in Class
 router.post("/class/join/:classId", async (req, res) => {
   try {
     const { rollNo, enrollment, name, password } = req.body;
     const { classId } = req.params;
-
-    if (!rollNo || !enrollment || !name || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Roll No, enrollment, name and password are required",
-      });
-    }
-
     const cls = await Class.findById(classId);
     if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
-
-    const enrollmentExists = await Class.findOne({ "students.enrollment": enrollment });
-    if (enrollmentExists) {
-      return res.status(400).json({
-        success: false,
-        message: "This enrollment number has already joined a class",
-      });
-    }
-
-    const rollExists = cls.students.find((s) => s.rollNo === Number(rollNo));
-    if (rollExists) {
-      return res.status(400).json({
-        success: false,
-        message: "This roll number already exists in this class",
-      });
-    }
-
-    const alreadyJoined = cls.students.find((s) => s.enrollment === enrollment);
-    if (alreadyJoined) {
-      return res.status(400).json({
-        success: false,
-        message: "Student already joined this class",
-      });
-    }
-
     cls.students.push({ rollNo: Number(rollNo), enrollment, name, password, joinedAt: new Date() });
-
-    // Sync with Organization pool
-    if (cls.mode === 'organization' && cls.organizationId) {
-      try {
-        const studentEmail = `${enrollment.toLowerCase()}@institution.com`;
-        let studentUser = await User.findOne({ email: studentEmail });
-        
-        if (!studentUser) {
-          studentUser = new User({
-            name,
-            email: studentEmail,
-            password,
-            role: 'student',
-            mode: 'organization',
-            organizationId: cls.organizationId
-          });
-          await studentUser.save();
-
-          const studentProfile = new Student({
-            userId: studentUser._id,
-            enrollmentNo: enrollment,
-            organizationId: cls.organizationId,
-            branch: cls.branch,
-            currentSemester: cls.semester,
-            currentYear: cls.year,
-            addedBy: cls.createdBy
-          });
-          await studentProfile.save();
-        }
-      } catch (syncErr) {
-        console.error("Sync error in join class:", syncErr);
-      }
-    }
-
     await cls.save();
-
     res.json({ success: true, message: "Joined class successfully" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// ==============================
-// IMPORT STUDENTS FROM EXCEL
-// ==============================
-router.post("/class/import-students/:classId", async (req, res) => {
+router.post("/class/import-students/:classId", authenticate, async (req, res) => {
   try {
-    const { students } = req.body;
+    const { students } = req.body; // students: [{ rollNo, enrollment, name, password }]
     const classDoc = await Class.findById(req.params.classId);
     if (!classDoc) return res.status(404).json({ success: false, message: "Class not found" });
 
-    const existing = new Set(classDoc.students.map((s) => s.enrollment));
-    const newStudents = students.filter((s) => !existing.has(String(s.enrollment)));
+    const results = { added: 0, updated: 0, errors: [] };
 
-    // Sync with Organization Student pool if in Org mode
-    if (classDoc.mode === 'organization' && classDoc.organizationId) {
-      for (const s of newStudents) {
+    for (const s of students) {
         try {
-          // Check if User exists by enrollment-based email
-          const studentEmail = `${s.enrollment.toLowerCase()}@institution.com`;
-          let studentUser = await User.findOne({ email: studentEmail });
-          
-          if (!studentUser) {
-            studentUser = new User({
-              name: s.name,
-              email: studentEmail,
-              password: s.password, // bcrypt hash handled by pre-save
-              role: 'student',
-              mode: 'organization',
-              organizationId: classDoc.organizationId
-            });
-            await studentUser.save();
+            if (!s.enrollment || !s.name || !s.password) {
+                results.errors.push(`Incomplete data for ${s.name || 'Unknown'}`);
+                continue;
+            }
 
-            const studentProfile = new Student({
-              userId: studentUser._id,
-              enrollmentNo: s.enrollment,
-              organizationId: classDoc.organizationId,
-              branch: classDoc.branch,
-              currentSemester: classDoc.semester,
-              currentYear: classDoc.year,
-              addedBy: classDoc.createdBy
-            });
-            await studentProfile.save();
-          }
-        } catch (syncErr) {
-          console.error(`Failed to sync student ${s.enrollment}:`, syncErr);
+            // 1. Unified Student/User creation
+            // Use synthetic email for students: enrollment@institution.com
+            const syntheticEmail = `${s.enrollment.toLowerCase()}@institution.com`;
+            
+            let user = await User.findOne({ email: syntheticEmail });
+            if (!user) {
+                user = new User({
+                    name: s.name,
+                    email: syntheticEmail,
+                    password: s.password, // Will be hashed by pre-save
+                    role: 'student',
+                    mode: classDoc.mode,
+                    organizationId: classDoc.organizationId
+                });
+                await user.save();
+            }
+
+            let studentProfile = await Student.findOne({ enrollmentNo: s.enrollment });
+            if (!studentProfile) {
+                studentProfile = new Student({
+                    userId: user._id,
+                    enrollmentNo: s.enrollment,
+                    organizationId: classDoc.organizationId,
+                    currentSemester: classDoc.semester,
+                    branch: classDoc.branch,
+                    addedBy: req.userId
+                });
+                await studentProfile.save();
+                results.added++;
+            } else {
+                // Update profile if mismatch
+                studentProfile.currentSemester = classDoc.semester;
+                studentProfile.branch = classDoc.branch;
+                await studentProfile.save();
+                results.updated++;
+            }
+
+            // 2. Clear then Push to Class Roster (Avoid duplicates)
+            const exists = classDoc.students.find(st => st.enrollment === s.enrollment);
+            if (!exists) {
+                classDoc.students.push({
+                    rollNo: Number(s.rollNo),
+                    enrollment: s.enrollment,
+                    name: s.name,
+                    password: s.password, // Note: We store plain text here for "solo" legacy, but User has hashed.
+                    joinedAt: new Date()
+                });
+            } else {
+                // Update existing roster entry
+                exists.rollNo = Number(s.rollNo);
+                exists.name = s.name;
+                exists.password = s.password;
+            }
+        } catch (err) {
+            results.errors.push(`Error adding ${s.enrollment}: ${err.message}`);
         }
-      }
     }
-
-    classDoc.students.push(
-      ...newStudents.map((s) => ({
-        rollNo: Number(s.rollNo),
-        enrollment: String(s.enrollment).trim(),
-        name: String(s.name).trim(),
-        password: String(s.password).trim(),
-        joinedAt: new Date(),
-      }))
-    );
 
     await classDoc.save();
-
-    res.json({
-      success: true,
-      added: newStudents.length,
-      skipped: students.length - newStudents.length,
-      message: `${newStudents.length} students imported. ${students.length - newStudents.length} duplicates skipped.`,
+    res.json({ 
+        success: true, 
+        message: `Import complete. Added: ${results.added}, Updated: ${results.updated}`,
+        errors: results.errors 
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// ==============================
-// UPDATE CLASS (EDIT)
-// ==============================
-router.put("/class/:id", async (req, res) => {
-  try {
-    const { className, branch, year, semester } = req.body;
+router.delete("/class/:id/student/:enrollment", authenticate, async (req, res) => {
+    try {
+        const cls = await Class.findById(req.params.id);
+        if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
+        
+        const initialCount = cls.students.length;
+        cls.students = cls.students.filter(s => s.enrollment !== req.params.enrollment);
+        
+        if (cls.students.length === initialCount) {
+            return res.status(404).json({ success: false, message: "Student not found in this class" });
+        }
 
-    const updatedClass = await Class.findByIdAndUpdate(
-      req.params.id,
-      { className, branch, year, semester },
-      { new: true }
-    );
-
-    if (!updatedClass) return res.status(404).json({ success: false, message: "Class not found" });
-
-    res.json({ success: true, message: "Class updated successfully", class: updatedClass });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+        await cls.save();
+        res.json({ success: true, message: "Student removed from class successfully" });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// ==============================
-// DELETE CLASS — cascade delete exams, results, proctorlogs, examaccesses
-// ==============================
-router.delete("/class/:id", async (req, res) => {
-  try {
-    const cls = await Class.findById(req.params.id);
-    if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
-
-    // 1. Is class ke saare exams dhundo
-    const exams = await Exam.find({ classId: req.params.id });
-    const examIds = exams.map((e) => e._id);
-
-    if (examIds.length > 0) {
-      // 2. Un exams ke results delete karo
-      await Result.deleteMany({ examId: { $in: examIds } });
-      // 3. Un exams ke proctorlogs delete karo
-      await ProctorLog.deleteMany({ examId: { $in: examIds } });
-      // 4. Un exams ke examaccesses delete karo
-      await ExamAccess.deleteMany({ examId: { $in: examIds } });
-      // 5. Exams khud delete karo
-      await Exam.deleteMany({ classId: req.params.id });
-    }
-
-    // 6. Class delete karo
-    await Class.findByIdAndDelete(req.params.id);
-
-    res.json({ success: true, message: "Class and all related data deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ==============================
-// DELETE STUDENT FROM CLASS — cascade delete results + proctorlogs
-// ==============================
-router.delete("/class/:classId/student/:studentId", async (req, res) => {
-  try {
-    const { classId, studentId } = req.params;
-
-    const cls = await Class.findById(classId);
-    if (!cls) return res.status(404).json({ message: "Class not found" });
-
-    // Student ka enrollment number nikalo pehle (studentId yahan subdocument _id hai)
-    const student = cls.students.find((s) => s._id.toString() === studentId);
-    if (!student) return res.status(404).json({ message: "Student not found in class" });
-
-    const enrollment = student.enrollment;
-
-    // Is class ke exam IDs nikalo
-    const exams = await Exam.find({ classId });
-    const examIds = exams.map((e) => e._id);
-
-    // Results delete — is student ke, sirf is class ke exams ke
-    if (examIds.length > 0) {
-      await Result.deleteMany({ studentId: enrollment, examId: { $in: examIds } });
-      await ProctorLog.deleteMany({ studentId: enrollment, examId: { $in: examIds } });
-      await ExamAccess.deleteMany({ studentId: enrollment, examId: { $in: examIds } });
-    }
-
-    // Student ko class se remove karo
-    cls.students = cls.students.filter((s) => s._id.toString() !== studentId);
-    await cls.save();
-
-    res.json({
-      success: true,
-      message: `Student ${enrollment} and all related data deleted successfully`,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ==============================
-// SEARCH ORG STUDENTS (Not in this class)
-// ==============================
-router.get("/class/:classId/org-students", authenticate, async (req, res) => {
-  try {
-    const { classId } = req.params;
-    const { query } = req.query; // Search by name/enrollment
-    const Student = require("../models/Student");
-
-    const cls = await Class.findById(classId);
-    if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
-
-    const existingEnrollments = cls.students.map(s => s.enrollment);
-
-    let filter = {
-      organizationId: req.organizationId,
-      enrollmentNo: { $nin: existingEnrollments }
-    };
-
-    let students = await Student.find(filter)
-      .populate('userId', 'name email')
-      .limit(20);
-
-    if (query) {
-      students = students.filter(s => 
-        s.userId?.name.toLowerCase().includes(query.toLowerCase()) || 
-        s.enrollmentNo.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    res.json({ success: true, students });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ==============================
-// ADD ORG STUDENTS TO CLASS
-// ==============================
 router.post("/class/:classId/add-org-students", authenticate, async (req, res) => {
-  try {
-    const { classId } = req.params;
-    const { studentEnrollments } = req.body; // Array of enrollments
-    const Student = require("../models/Student");
-
-    const cls = await Class.findById(classId);
-    if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
-
-    const studentsToFetch = await Student.find({
-      enrollmentNo: { $in: studentEnrollments },
-      organizationId: req.organizationId
-    }).populate('userId');
-
-    let addedCount = 0;
-    for (let sItem of studentsToFetch) {
-      if (!cls.students.find(s => s.enrollment === sItem.enrollmentNo)) {
-        cls.students.push({
-          rollNo: cls.students.length + 1, // Auto-assign next roll no
-          enrollment: sItem.enrollmentNo,
-          name: sItem.userId?.name || "Unknown",
-          password: "OrgUser", // Placeholder since we use central auth for org students
-          joinedAt: new Date()
-        });
-        addedCount++;
-      }
-    }
-
-    await cls.save();
-    res.json({ success: true, message: `Successfully added ${addedCount} students to class.` });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    try {
+        const { classId } = req.params;
+        const { studentEnrollments } = req.body;
+        const cls = await Class.findById(classId);
+        if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
+        const studentsToFetch = await Student.find({ enrollmentNo: { $in: studentEnrollments }, organizationId: req.organizationId }).populate('userId');
+        let addedCount = 0;
+        for (let sItem of studentsToFetch) {
+            if (!cls.students.find(s => s.enrollment === sItem.enrollmentNo)) {
+                cls.students.push({ rollNo: cls.students.length + 1, enrollment: sItem.enrollmentNo, name: sItem.userId?.name || "Unknown", password: "OrgUser", joinedAt: new Date() });
+                addedCount++;
+            }
+        }
+        await cls.save();
+        res.json({ success: true, message: `Successfully added ${addedCount} students to class.` });
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
 module.exports = router;

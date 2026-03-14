@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaPlus, FaTrash, FaBell, FaInfoCircle, FaExclamationTriangle, FaClock } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaBell, FaInfoCircle, FaExclamationTriangle, FaClock, FaBullhorn, FaUsers, FaCheckCircle, FaTimes, FaCalendarAlt, FaUserGraduate } from 'react-icons/fa';
+import BackButton from '../BackButton';
 import './NoticeManagement.css';
 
 const NoticeManagement = () => {
@@ -23,11 +24,13 @@ const NoticeManagement = () => {
 
   const fetchNotices = async () => {
     try {
-      const res = await axios.get('/api/notices');
+      const res = await axios.get('/api/notices', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       setNotices(res.data.notices);
       setLoading(false);
     } catch (err) {
-      setError('Failed to fetch notices');
+      setError('Failed to sync with announcement server');
       setLoading(false);
     }
   };
@@ -35,7 +38,9 @@ const NoticeManagement = () => {
   const handleCreateNotice = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/notices', formData);
+      await axios.post('/api/notices', formData, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       setShowAddForm(false);
       setFormData({
         title: '',
@@ -46,152 +51,174 @@ const NoticeManagement = () => {
       });
       fetchNotices();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create notice');
+      setError(err.response?.data?.message || 'Authorization failed for this broadcast');
     }
   };
 
   const handleDeleteNotice = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this notice?')) return;
+    if (!window.confirm('Delete this broadcast permanently?')) return;
     try {
-      await axios.delete(`/api/notices/${id}`);
+      await axios.delete(`/api/notices/${id}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       fetchNotices();
     } catch (err) {
-      setError('Failed to delete notice');
+      setError('Internal deletion error');
     }
   };
 
   const getPriorityIcon = (priority) => {
     switch (priority) {
-      case 'urgent': return <FaExclamationTriangle className="p-urgent" />;
-      case 'high': return <FaBell className="p-high" />;
-      case 'medium': return <FaInfoCircle className="p-medium" />;
-      default: return <FaInfoCircle className="p-low" />;
+      case 'urgent': return <FaExclamationTriangle className="p-icon urgent" />;
+      case 'high': return <FaBell className="p-icon high" />;
+      case 'medium': return <FaInfoCircle className="p-icon medium" />;
+      default: return <FaCheckCircle className="p-icon low" />;
     }
   };
 
-  if (loading) return <div className="notice-loading">Loading notices...</div>;
+  if (loading) return (
+    <div className="nm-loading">
+        <div className="nm-spinner"></div>
+        <p>Accessing bulletin archives...</p>
+    </div>
+  );
 
   return (
     <div className="notice-management-container">
+      <BackButton to="/TeacherHome" />
+      
       <div className="nm-header">
         <div className="nm-header-left">
-          <h1>Institutional Announcements</h1>
-          <p>Broadcast updates to teachers and students system-wide.</p>
+          <h2><FaBullhorn /> Institutional Bulletins</h2>
+          <p>Deploy real-time announcements to the entire academic community.</p>
         </div>
-        <button className="add-notice-btn" onClick={() => setShowAddForm(!showAddForm)}>
-          {showAddForm ? 'Cancel' : <><FaPlus /> New Notice</>}
+        <button className={showAddForm ? "cancel-broadcast-btn" : "add-broadcast-btn"} onClick={() => setShowAddForm(!showAddForm)}>
+          {showAddForm ? <><FaTimes /> Close Console</> : <><FaPlus /> Create Broadcast</>}
         </button>
       </div>
 
-      {error && <div className="nm-error-banner">{error}</div>}
+      {error && (
+        <div className="nm-alert-banner">
+            <FaExclamationTriangle />
+            <span>{error}</span>
+            <button onClick={() => setError('')}>&times;</button>
+        </div>
+      )}
 
       {showAddForm && (
-        <div className="notice-form-card animate-slide-down">
-          <h3>Create New Announcement</h3>
+        <div className="broadcast-console-card animate-pop-in">
+          <div className="console-header">
+            <h3>New Broadcast Transmission</h3>
+            <p>Configure visibility and priority for this notice.</p>
+          </div>
           <form onSubmit={handleCreateNotice}>
-            <div className="form-group">
-              <label>Notice Title</label>
-              <input 
-                type="text" 
-                placeholder="e.g., Annual Sports Day Guidelines"
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Content</label>
-              <textarea 
-                placeholder="Write your announcement here..."
-                value={formData.content}
-                onChange={(e) => setFormData({...formData, content: e.target.value})}
-                required
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Priority</label>
-                <select 
-                  value={formData.priority}
-                  onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Expires On (Optional)</label>
+            <div className="form-grid-v2">
+                <div className="form-group-v2 full-width">
+                <label>Bulletin Title</label>
                 <input 
-                  type="date" 
-                  value={formData.expiresAt}
-                  onChange={(e) => setFormData({...formData, expiresAt: e.target.value})}
+                    type="text" 
+                    placeholder="Enter a descriptive headline..."
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    required
                 />
-              </div>
+                </div>
+                <div className="form-group-v2 full-width">
+                <label>Content Description</label>
+                <textarea 
+                    placeholder="Provide full details of the announcement..."
+                    value={formData.content}
+                    onChange={(e) => setFormData({...formData, content: e.target.value})}
+                    required
+                />
+                </div>
+                <div className="form-group-v2">
+                    <label>Priority Level</label>
+                    <div className="select-pill-wrapper">
+                        {['low', 'medium', 'high', 'urgent'].map(p => (
+                            <button 
+                                key={p} 
+                                type="button" 
+                                className={`priority-pill ${p} ${formData.priority === p ? 'active' : ''}`}
+                                onClick={() => setFormData({...formData, priority: p})}
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className="form-group-v2">
+                <label>Auto-Archive Date</label>
+                <div className="input-with-icon">
+                    <FaCalendarAlt />
+                    <input 
+                        type="date" 
+                        value={formData.expiresAt}
+                        onChange={(e) => setFormData({...formData, expiresAt: e.target.value})}
+                    />
+                </div>
+                </div>
+                <div className="form-group-v2 full-width">
+                <label>Target Audience Permissions</label>
+                <div className="permission-belt">
+                    <label className={`perm-chip ${formData.targetRoles.includes('teacher') ? 'active' : ''}`}>
+                    <input 
+                        type="checkbox" 
+                        checked={formData.targetRoles.includes('teacher')}
+                        onChange={(e) => {
+                        const roles = e.target.checked 
+                            ? [...formData.targetRoles, 'teacher']
+                            : formData.targetRoles.filter(r => r !== 'teacher');
+                        setFormData({...formData, targetRoles: roles});
+                        }}
+                    /> <FaUsers /> Faculty Members
+                    </label>
+                    <label className={`perm-chip ${formData.targetRoles.includes('student') ? 'active' : ''}`}>
+                    <input 
+                        type="checkbox" 
+                        checked={formData.targetRoles.includes('student')}
+                        onChange={(e) => {
+                        const roles = e.target.checked 
+                            ? [...formData.targetRoles, 'student']
+                            : formData.targetRoles.filter(r => r !== 'student');
+                        setFormData({...formData, targetRoles: roles});
+                        }}
+                    /> <FaUserGraduate /> Students
+                    </label>
+                </div>
+                </div>
             </div>
-            <div className="form-group">
-              <label>Target Audience</label>
-              <div className="checkbox-group">
-                <label>
-                  <input 
-                    type="checkbox" 
-                    checked={formData.targetRoles.includes('teacher')}
-                    onChange={(e) => {
-                      const roles = e.target.checked 
-                        ? [...formData.targetRoles, 'teacher']
-                        : formData.targetRoles.filter(r => r !== 'teacher');
-                      setFormData({...formData, targetRoles: roles});
-                    }}
-                  /> Teachers
-                </label>
-                <label>
-                  <input 
-                    type="checkbox" 
-                    checked={formData.targetRoles.includes('student')}
-                    onChange={(e) => {
-                      const roles = e.target.checked 
-                        ? [...formData.targetRoles, 'student']
-                        : formData.targetRoles.filter(r => r !== 'student');
-                      setFormData({...formData, targetRoles: roles});
-                    }}
-                  /> Students
-                </label>
-              </div>
-            </div>
-            <button type="submit" className="submit-notice-btn">Post Announcement</button>
+            <button type="submit" className="nm-publish-btn">Deploy Broadcast</button>
           </form>
         </div>
       )}
 
-      <div className="notices-list">
+      <div className="bulletins-grid">
         {notices.length === 0 ? (
-          <div className="empty-notices">
-            <FaBell className="empty-icon" />
-            <p>No active announcements found.</p>
+          <div className="nm-empty-state">
+            <FaBell />
+            <p>No active broadcasts in the institutional pipeline.</p>
           </div>
         ) : (
           notices.map((notice) => (
-            <div key={notice._id} className={`notice-card priority-${notice.priority}`}>
-              <div className="notice-card-header">
-                <div className="n-title-wrap">
+            <div key={notice._id} className={`bulletin-card p-${notice.priority}`}>
+              <div className="bulletin-header">
+                <div className="bulletin-meta-top">
                   {getPriorityIcon(notice.priority)}
-                  <h3>{notice.title}</h3>
+                  <span className="bulletin-timestamp"><FaClock /> {new Date(notice.createdAt).toLocaleDateString()}</span>
                 </div>
-                <button className="delete-n-btn" onClick={() => handleDeleteNotice(notice._id)}>
+                <button className="nm-delete-card-btn" onClick={() => handleDeleteNotice(notice._id)}>
                   <FaTrash />
                 </button>
               </div>
-              <div className="notice-card-body">
+              <div className="bulletin-body">
+                <h3>{notice.title}</h3>
                 <p>{notice.content}</p>
               </div>
-              <div className="notice-card-footer">
-                <span className="n-audience">
-                  Target: {notice.targetRoles.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(', ')}
-                </span>
-                <span className="n-date">
-                  <FaClock /> {new Date(notice.createdAt).toLocaleDateString()}
-                </span>
+              <div className="bulletin-footer">
+                <div className="audience-indicator">
+                    <FaUsers /> {notice.targetRoles.join(', ')}
+                </div>
               </div>
             </div>
           ))

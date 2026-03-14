@@ -3,23 +3,35 @@ const mongoose = require('mongoose');
 const organizationSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: false,
   },
   type: {
     type: String,
-    enum: ['school', 'college', 'university', 'coaching'],
-    required: true,
+    required: false,
   },
   principalId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  logo: {
-    type: String,
-  },
+  logoUrl: { type: String, default: '' },
   address: {
     type: String,
+    default: '',
+  },
+  organizationName: { type: String },
+  institutionType: { 
+    type: String, 
+    enum: ['School','College','University','Institute'], 
+    default: 'School' 
+  },
+  branches: [{ type: String }],
+  academicYears: [{ type: String }],
+  semesters: [{ type: String }],
+  permissions: {
+    allowTeacherStudentImport: { type: Boolean, default: false },
+    principalApprovalLoop: { type: Boolean, default: false },
+    internalExamSharing: { type: Boolean, default: false }
   },
   createdAt: {
     type: Date,
@@ -54,20 +66,14 @@ const organizationSchema = new mongoose.Schema({
       ref: 'User',
     },
   ],
-  settings: {
-    allowTeacherStudentAdd: {
-      type: Boolean,
-      default: true,
-    },
-    requirePrincipalApproval: {
-      type: Boolean,
-      default: false,
-    },
-    examSharingEnabled: {
-      type: Boolean,
-      default: true,
-    },
-  },
-});
+  subjects: [
+    {
+      name: { type: String, required: true },
+      code: { type: String, required: true },
+      branch: { type: String, required: true },
+      semester: { type: String, required: true }
+    }
+  ]
+}, { timestamps: true });
 
 module.exports = mongoose.model('Organization', organizationSchema);

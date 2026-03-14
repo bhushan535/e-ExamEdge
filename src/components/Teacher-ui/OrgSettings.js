@@ -1,141 +1,252 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { BASE_URL } from '../../config';
+import { getOrgSettings, saveOrgSettings } from '../../services/orgSettingsService';
 import Toast from '../Toast';
 import useToast from '../useToast';
+import BackButton from '../BackButton';
+import { 
+    FaSave, FaImage, FaShieldAlt, FaInfoCircle, 
+    FaUndo, FaSpinner 
+} from 'react-icons/fa';
 import './OrgSettings.css';
 
 const OrgSettings = () => {
+    const navigate = useNavigate();
     const { token } = useAuth();
     const { toasts, showToast, removeToast } = useToast();
-    const [org, setOrg] = useState({
-        name: '',
-        type: '',
+    
+    const [settings, setSettings] = useState({
+        organizationName: '',
+        institutionType: 'School',
         address: '',
-        logo: '',
-        settings: {
-            allowTeacherStudentAdd: true,
-            requirePrincipalApproval: false,
-            examSharingEnabled: true
+        logoUrl: '',
+        // Keep these in state for API compatibility even if not edited here
+        branches: [],
+        academicYears: [],
+        semesters: [],
+        subjects: [],
+        permissions: {
+            allowTeacherStudentImport: false,
+            principalApprovalLoop: false,
+            internalExamSharing: false
         }
     });
 
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [logoPreview, setLogoPreview] = useState('');
+
     useEffect(() => {
-        if (token) {
-            fetch(`${BASE_URL}/principal/organization`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) setOrg(data.organization);
-            });
-        }
+        const fetchSettings = async () => {
+            try {
+                const res = await getOrgSettings();
+                const data = res.data;
+                setSettings({
+                    ...data,
+                    permissions: data.permissions || {
+                        allowTeacherStudentImport: false,
+                        principalApprovalLoop: false,
+                        internalExamSharing: false
+                    }
+                });
+                setLogoPreview(data.logoUrl || '');
+                setLoading(false);
+            } catch (err) {
+                showToast('Failed to load settings', 'error');
+                setLoading(false);
+            }
+        };
+        if (token) fetchSettings();
     }, [token]);
 
+    // Logo Handlers
     const handleLogoChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setOrg({ ...org, logo: reader.result });
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            showToast('Only JPG, PNG, WebP allowed', 'error');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            showToast('Logo must be under 2MB', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result;
+            setLogoPreview(base64String);
+            setSettings(prev => ({ ...prev, logoUrl: base64String }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // Save Handler
+    const handleSave = async (e) => {
+        if (e) e.preventDefault();
+        if (!settings.organizationName.trim() || settings.organizationName.length < 2) {
+            showToast('Organization name is required', 'error');
+            return;
+        }
+        
+        setSaving(true);
+        try {
+            const res = await saveOrgSettings(settings);
+            setSettings(res.data);
+            showToast('Profile updated successfully!', 'success');
+            setTimeout(() => navigate('/TeacherHome'), 1500);
+        } catch (err) {
+            showToast('Save failed. Please try again.', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
-    const handleUpdate = async (e) => {
-        e.preventDefault();
+    const handleDiscard = async () => {
+        setLoading(true);
         try {
-            const res = await fetch(`${BASE_URL}/principal/organization`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(org)
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast("Organization updated", "success");
-            }
-        } catch (err) {
-            showToast("Update failed", "error");
+            const res = await getOrgSettings();
+            setSettings(res.data);
+            setLogoPreview(res.data.logoUrl || '');
+            showToast('Settings reloaded', 'info');
+        } catch {
+            showToast('Failed to reload', 'error');
+        } finally {
+            setLoading(false);
         }
     };
+
+    const togglePermission = (key) => {
+        setSettings(prev => ({
+            ...prev,
+            permissions: { ...prev.permissions, [key]: !prev.permissions[key] }
+        }));
+    };
+
+    if (loading) {
+        return (
+            <div className="loader-container">
+                <FaSpinner className="spinner" />
+                <p>Loading institutional profile...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="org-settings-container">
             <Toast toasts={toasts} removeToast={removeToast} />
-            <h2>Organization Settings</h2>
+            <BackButton to="/TeacherHome" />
             
-            <form onSubmit={handleUpdate} className="settings-form">
-                <div className="form-section branding-section">
-                    <h3>Institutional Branding</h3>
-                    <div className="logo-upload-wrapper">
-                        {org.logo ? (
-                            <img src={org.logo} alt="Org Logo" className="logo-preview" />
-                        ) : (
-                            <div className="logo-placeholder">No Logo</div>
-                        )}
-                        <div className="file-input-group">
-                            <label htmlFor="logo-upload" className="custom-file-upload">
-                                Change Logo
+            <div className="settings-header">
+                <h2>Organization Settings</h2>
+                <p>Manage your institution's profile and functional configuration</p>
+            </div>
+            
+            <form onSubmit={handleSave} className="settings-form">
+                <div className="settings-grid">
+                    {/* SECTION 1: Institutional Branding */}
+                    <div className="form-section branding-section">
+                        <h3><FaImage /> Institutional Branding</h3>
+                        <div className="logo-upload-wrapper">
+                            {logoPreview ? (
+                                <img src={logoPreview} alt="Org Logo" className="logo-preview" />
+                            ) : (
+                                <div className="logo-placeholder">No Logo</div>
+                            )}
+                            <div className="file-input-group">
+                                <label htmlFor="logo-upload" className="custom-file-upload">
+                                    Change institutional Logo
+                                </label>
+                                <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoChange} />
+                                <p className="file-hint">JPG, PNG, WebP (Max 2MB)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SECTION 2: Basic Information */}
+                    <div className="form-section info-section">
+                        <h3><FaInfoCircle /> Basic Information</h3>
+                        <div className="input-group">
+                            <label>Organization Name</label>
+                            <input 
+                                type="text" placeholder="Full legal name" 
+                                value={settings.organizationName} 
+                                onChange={e => setSettings({...settings, organizationName: e.target.value})}
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Institution Type</label>
+                            <select value={settings.institutionType} onChange={e => setSettings({...settings, institutionType: e.target.value})}>
+                                <option value="School">School</option>
+                                <option value="College">College</option>
+                                <option value="University">University</option>
+                                <option value="Institute">Institute</option>
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>Official Address</label>
+                            <textarea 
+                                placeholder="Full address" 
+                                value={settings.address} 
+                                onChange={e => setSettings({...settings, address: e.target.value})}
+                            />
+                        </div>
+                    </div>
+
+                    {/* SECTION 3: Permissions */}
+                    <div className="form-section permissions-section">
+                        <h3><FaShieldAlt /> Functional Permissions</h3>
+                        <div className="checkbox-grid">
+                            <label className="toggle-label">
+                                <div className="toggle-text">
+                                    <span>Allow Teacher Student Import</span>
+                                    <p>Teachers can add/import students directly</p>
+                                </div>
+                                <input 
+                                    type="checkbox" 
+                                    checked={settings.permissions.allowTeacherStudentImport} 
+                                    onChange={() => togglePermission('allowTeacherStudentImport')}
+                                />
+                                <span className="slider"></span>
                             </label>
-                            <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoChange} />
-                            <p className="file-hint">Recommended: Square format, max 2MB</p>
+                            <label className="toggle-label">
+                                <div className="toggle-text">
+                                    <span>Principal Approval Loop</span>
+                                    <p>Exams require your approval to publish</p>
+                                </div>
+                                <input 
+                                    type="checkbox" 
+                                    checked={settings.permissions.principalApprovalLoop} 
+                                    onChange={() => togglePermission('principalApprovalLoop')}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                            <label className="toggle-label">
+                                <div className="toggle-text">
+                                    <span>Internal Exam Sharing</span>
+                                    <p>Teachers can clone shared exams</p>
+                                </div>
+                                <input 
+                                    type="checkbox" 
+                                    checked={settings.permissions.internalExamSharing} 
+                                    onChange={() => togglePermission('internalExamSharing')}
+                                />
+                                <span className="slider"></span>
+                            </label>
                         </div>
                     </div>
                 </div>
 
-                <div className="form-section">
-                    <h3>Basic Information</h3>
-                    <input 
-                        type="text" placeholder="Organization Name" 
-                        value={org.name} onChange={e => setOrg({...org, name: e.target.value})}
-                    />
-                    <select value={org.type} onChange={e => setOrg({...org, type: e.target.value})}>
-                        <option value="school">School</option>
-                        <option value="college">College</option>
-                        <option value="university">University</option>
-                        <option value="coaching">Coaching</option>
-                    </select>
-                    <textarea 
-                        placeholder="Address" 
-                        value={org.address} onChange={e => setOrg({...org, address: e.target.value})}
-                    />
+                <div className="form-actions">
+                    <button type="submit" className="save-btn" disabled={saving}>
+                        {saving ? <FaSpinner className="spinner" /> : <FaSave />} {saving ? 'Saving...' : 'Save Configuration'}
+                    </button>
+                    <button type="button" className="discard-btn" onClick={handleDiscard} disabled={saving}>
+                        <FaUndo /> Discard Changes
+                    </button>
                 </div>
-
-                <div className="form-section">
-                    <h3>Permissions</h3>
-                    <div className="checkbox-group">
-                        <label>
-                            <input 
-                                type="checkbox" 
-                                checked={org.settings?.allowTeacherStudentAdd} 
-                                onChange={e => setOrg({...org, settings: {...org.settings, allowTeacherStudentAdd: e.target.checked}})}
-                            />
-                            Allow Teachers to add Students
-                        </label>
-                        <label>
-                            <input 
-                                type="checkbox" 
-                                checked={org.settings?.requirePrincipalApproval} 
-                                onChange={e => setOrg({...org, settings: {...org.settings, requirePrincipalApproval: e.target.checked}})}
-                            />
-                            Require Principal approval for Exams
-                        </label>
-                        <label>
-                            <input 
-                                type="checkbox" 
-                                checked={org.settings?.examSharingEnabled} 
-                                onChange={e => setOrg({...org, settings: {...org.settings, examSharingEnabled: e.target.checked}})}
-                            />
-                            Enable Exam Sharing within Organization
-                        </label>
-                    </div>
-                </div>
-
-                <button type="submit" className="save-btn">Save Changes</button>
             </form>
         </div>
     );

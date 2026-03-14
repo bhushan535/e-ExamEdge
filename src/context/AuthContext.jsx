@@ -18,6 +18,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [org, setOrg] = useState(null);
+  const [teacherProfile, setTeacherProfile] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.get('/api/auth/me');
       setUser(res.data.user);
       if (res.data.organization) setOrg(res.data.organization);
+      if (res.data.teacherProfile) setTeacherProfile(res.data.teacherProfile);
     } catch (error) {
       console.error('Failed to fetch user:', error);
       logout();
@@ -45,12 +47,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await axios.post('/api/auth/login', { email, password });
-    const { token, user, organization } = res.data;
+    const { token, user, organization, teacherProfile } = res.data;
     localStorage.setItem('token', token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setToken(token);
     setUser(user);
     if (organization) setOrg(organization);
+    if (teacherProfile) setTeacherProfile(teacherProfile);
     return res.data;
   };
 
@@ -78,12 +81,13 @@ export const AuthProvider = ({ children }) => {
       ? '/api/auth/signup/teacher-solo'
       : '/api/auth/signup/principal';
     const res = await axios.post(endpoint, userData);
-    const { token, user, organization } = res.data;
+    const { token, user, organization, teacherProfile } = res.data;
     localStorage.setItem('token', token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setToken(token);
     setUser(user);
     if (organization) setOrg(organization);
+    if (teacherProfile) setTeacherProfile(teacherProfile);
     return res.data;
   };
 
@@ -93,12 +97,14 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setOrg(null);
+    setTeacherProfile(null);
     delete axios.defaults.headers.common['Authorization'];
   };
 
   const value = {
     user,
     org,
+    teacherProfile,
     token,
     loading,
     login,

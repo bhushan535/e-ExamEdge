@@ -1,158 +1,302 @@
-.add-question-page {
-  min-height: 100vh;
-  background: #f4f6f8;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.add-question-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeIn 0.8s ease-out;
 }
 
-.add-question-card {
-  background: #fff;
-  padding: 30px;
-  width: 450px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+.aq-header {
+    text-align: center;
+    margin-bottom: 4rem;
 }
 
-.page-title {
-  text-align: center;
-  margin-bottom: 15px;
-  color: #333;
+.aq-badge {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: inline-block;
+    margin-bottom: 1rem;
 }
 
-.question-counter {
-  text-align: center;
-  font-size: 15px;
-  margin-bottom: 10px;
+.aq-header h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 0.6rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.limit-text {
-  text-align: center;
-  color: red;
-  font-weight: bold;
-  margin-bottom: 10px;
+.aq-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
 }
 
-.question-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.aq-dashboard-grid {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 2.5rem;
+    align-items: start;
+    margin-bottom: 4rem;
 }
 
-.input {
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
+.glass-v2 {
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    border-radius: 36px;
+    padding: 2.5rem;
 }
 
-.input:focus {
-  border-color: #007bff;
-  outline: none;
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--glass-border);
 }
 
-.done-btn{
-  margin-top: 10px;
-  padding: 10px;
-  background: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 15px;
+.section-head h3 { font-size: 1.2rem; font-weight: 800; }
+.section-head svg { font-size: 1.4rem; color: var(--primary-color); }
+
+/* Progress */
+.stack-progress-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.submit-btn {
-  margin-top: 10px;
-  padding: 10px;
-  background: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 15px;
+.progress-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
 }
 
-.submit-btn:disabled {
-  background: gray;
-  cursor: not-allowed;
+.pill {
+    width: 25px; height: 10px;
+    background: var(--bg-dark);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    transition: var(--transition-smooth);
 }
 
-.submit-btn:hover:not(:disabled) {
-  background: #0056b3;
+.pill.filled {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
-.add-question-page {
-  min-height: 100vh;
-  background: #eef2f7;
-  display: flex;
-  justify-content: center;
-  padding: 20px;
+.progress-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
 }
 
-.add-question-card {
-  background: #fff;
-  width: 500px;
-  padding: 25px;
-  border-radius: 10px;
+.progress-meta b { color: var(--text-main); }
+
+.aq-limit-banner {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px dashed var(--success-color);
+    border-radius: 20px;
+    text-align: center;
 }
 
-.question-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.aq-limit-banner svg { font-size: 2rem; color: var(--success-color); margin-bottom: 1rem; }
+.aq-limit-banner p { font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+.aq-done-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--success-color);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-.question-form input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+/* Editor */
+.aq-form-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
 }
 
-.question-form button {
-  background: #007bff;
-  color: white;
-  padding: 8px;
-  border: none;
-  border-radius: 5px;
+.aq-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
 }
 
-.list-title {
-  margin-top: 20px;
+.aq-group label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.question-item {
-  background: #f9f9f9;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 6px;
+.aq-group textarea, .aq-group input, .aq-select-wrapper select {
+    padding: 1.1rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    color: var(--text-main);
+    font-size: 1rem;
+    transition: var(--transition-smooth);
 }
 
-.correct {
-  color: green;
-  font-weight: bold;
+.aq-group textarea { height: 100px; resize: none; }
+
+.aq-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
 }
 
-.delete-btn {
-  background: red;
-  color: white;
-  border: none;
-  padding: 5px 8px;
-  border-radius: 4px;
-  cursor: pointer;
+.aq-actions {
+    display: flex;
+    gap: 1rem;
 }
 
-.btn-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
+.aq-save-btn {
+    flex: 2;
+    padding: 1.2rem;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
 }
 
-.edit-btn {
-  background: orange;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
+.aq-cancel-btn {
+    flex: 1;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    border-radius: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Card List */
+.aq-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+    gap: 2rem;
+}
+
+.aq-item-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.aq-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.q-index {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    letter-spacing: 2px;
+}
+
+.q-actions { display: flex; gap: 0.8rem; }
+
+.aq-icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--bg-dark);
+    color: var(--text-muted);
+    transition: var(--transition-smooth);
+}
+
+.aq-icon-btn.edit:hover { background: var(--primary-color); color: white; }
+.aq-icon-btn.delete:hover { background: var(--accent-color); color: white; }
+
+.q-text { font-size: 1.3rem; font-weight: 800; line-height: 1.4; color: var(--text-main); }
+
+.q-options-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.q-opt-item {
+    padding: 1rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.q-opt-item.correct {
+    border-color: var(--success-color);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.opt-label {
+    width: 24px; height: 24px;
+    background: var(--glass-bg);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.correct .opt-label { background: var(--success-color); color: white; }
+
+.check-v { margin-left: auto; color: var(--success-color); }
+
+.aq-empty-state {
+    text-align: center;
+    padding: 5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    color: var(--text-muted);
+}
+
+.aq-empty-state svg { font-size: 3rem; opacity: 0.3; }
+
+@media (max-width: 1000px) {
+    .aq-dashboard-grid { grid-template-columns: 1fr; }
+    .aq-cards-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .aq-options-grid { grid-template-columns: 1fr; }
+    .q-options-list { grid-template-columns: 1fr; }
 }

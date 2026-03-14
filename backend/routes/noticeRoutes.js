@@ -46,7 +46,7 @@ router.get('/notices', authenticate, async (req, res) => {
   try {
     const query = {
       organizationId: req.organizationId,
-      targetRoles: req.userRole,
+      targetRoles: { $in: [req.userRole] },
       $or: [
         { expiresAt: null },
         { expiresAt: { $gt: new Date() } }

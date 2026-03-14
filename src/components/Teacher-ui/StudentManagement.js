@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { BASE_URL } from '../../config';
 import Toast from '../Toast';
 import useToast from '../useToast';
-import { FaSearch, FaUserGraduate, FaFilter, FaEdit, FaFileExcel } from 'react-icons/fa';
+import BackButton from '../BackButton';
+import { FaSearch, FaUserGraduate, FaFilter, FaEdit, FaFileExcel, FaUserCircle, FaGraduationCap, FaCalendarAlt } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import './StudentManagement.css';
 
@@ -24,13 +25,13 @@ const StudentManagement = () => {
       const data = await res.json();
       if (data.success) setStudents(data.students);
     } catch (err) {
-      showToast("Failed to fetch students", "error");
+      showToast("Failed to fetch student database", "error");
     }
   };
 
   useEffect(() => {
     if (token) fetchStudents();
-  }, [token, branch, semester]); // Re-fetch on filter change
+  }, [token, branch, semester]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -39,7 +40,7 @@ const StudentManagement = () => {
 
   const handleExport = () => {
     if (students.length === 0) {
-      showToast("No data to export", "error");
+      showToast("Database is empty", "error");
       return;
     }
 
@@ -56,89 +57,99 @@ const StudentManagement = () => {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, `Student_Directory_${new Date().toLocaleDateString()}.xlsx`);
-    showToast("Excel directory downloaded", "success");
+    XLSX.writeFile(wb, `Student_Registry_${new Date().toLocaleDateString()}.xlsx`);
+    showToast("Student registry exported to Excel", "success");
   };
 
   return (
     <div className="student-mgmt-container">
       <Toast toasts={toasts} removeToast={removeToast} />
+      <BackButton to="/TeacherHome" />
       
       <div className="mgmt-header">
-        <div className="title-row">
+        <div className="header-info">
             <h2><FaUserGraduate /> Student Directory</h2>
-            <button className="export-btn" onClick={handleExport}>
-                <FaFileExcel /> Download Excel
-            </button>
+            <p>Comprehensive registry of all students enrolled in the institution</p>
         </div>
-        <div className="header-actions">
-           <form className="search-bar" onSubmit={handleSearch}>
-              <FaSearch />
-              <input 
+        <button className="export-btn-premium" onClick={handleExport}>
+            <FaFileExcel /> Export Spreadsheet
+        </button>
+      </div>
+
+      <div className="search-filter-belt">
+        <form className="search-bar-modern" onSubmit={handleSearch}>
+            <FaSearch />
+            <input 
                 type="text" 
-                placeholder="Search Name or Roll No..." 
+                placeholder="Search by Name, Roll No or Email..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-              />
-              <button type="submit">Search</button>
-           </form>
+            />
+        </form>
+
+        <div className="filter-actions">
+            <div className="filter-select">
+                <FaFilter />
+                <select value={branch} onChange={(e) => setBranch(e.target.value)}>
+                    <option value="">All Disciplines</option>
+                    <option value="CSE">Computer Science</option>
+                    <option value="ECE">Electronics</option>
+                    <option value="MECH">Mechanical</option>
+                    <option value="CIVIL">Civil</option>
+                </select>
+            </div>
+            <div className="filter-select">
+                <FaCalendarAlt />
+                <select value={semester} onChange={(e) => setSemester(e.target.value)}>
+                    <option value="">All Semesters</option>
+                    {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
+                </select>
+            </div>
         </div>
       </div>
 
-      <div className="filters-row">
-        <div className="filter-group">
-          <FaFilter />
-          <select value={branch} onChange={(e) => setBranch(e.target.value)}>
-            <option value="">All Branches</option>
-            <option value="CSE">CSE</option>
-            <option value="ECE">ECE</option>
-            <option value="MECH">MECH</option>
-            <option value="CIVIL">CIVIL</option>
-          </select>
-        </div>
-        <div className="filter-group">
-          <select value={semester} onChange={(e) => setSemester(e.target.value)}>
-            <option value="">All Semesters</option>
-            {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
-          </select>
-        </div>
-      </div>
+      <div className="students-grid">
+        {students.length === 0 ? (
+            <div className="no-students">
+                <FaUserGraduate />
+                <p>No student records found matching your selection.</p>
+            </div>
+        ) : (
+            students.map((s) => (
+                <div className="student-card-v2" key={s._id}>
+                    <div className="card-accent"></div>
+                    <div className="card-top">
+                        <div className="student-avatar">
+                            {s.userId?.name.charAt(0)}
+                        </div>
+                        <div className="student-meta">
+                            <span className="roll-no">#{s.rollNo}</span>
+                            <span className={`status-tag ${s.status}`}>{s.status}</span>
+                        </div>
+                    </div>
+                    
+                    <div className="card-center">
+                        <h3>{s.userId?.name}</h3>
+                        <p className="email">{s.userId?.email}</p>
+                    </div>
 
-      <div className="students-list">
-        <table>
-          <thead>
-            <tr>
-              <th>Roll No</th>
-              <th>Name</th>
-              <th>Branch</th>
-              <th>Semester</th>
-              <th>Year</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.length === 0 ? (
-              <tr><td colSpan="7" className="no-data">No students found.</td></tr>
-            ) : (
-              students.map((s) => (
-                <tr key={s._id}>
-                  <td>{s.rollNo}</td>
-                  <td>{s.userId?.name}</td>
-                  <td>{s.branch}</td>
-                  <td>{s.currentSemester}</td>
-                  <td>{s.currentYear}</td>
-                  <td><span className={`status-badge ${s.status}`}>{s.status}</span></td>
-                  <td>
-                    <button className="action-btn edit" title="Edit Profile">
-                      <FaEdit />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                    <div className="card-bottom">
+                        <div className="info-pill">
+                            <FaGraduationCap /> {s.branch}
+                        </div>
+                        <div className="info-pill">
+                            <FaCalendarAlt /> Sem {s.currentSemester}
+                        </div>
+                    </div>
+
+                    <div className="card-actions">
+                        <button className="edit-profile-btn" onClick={() => showToast("Profile editing coming soon", "info")}>
+                            <FaEdit /> Manage Profile
+                        </button>
+                    </div>
+                </div>
+            ))
+        )}
       </div>
     </div>
   );

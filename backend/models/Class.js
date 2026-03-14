@@ -16,7 +16,7 @@ const classSchema = new mongoose.Schema(
 
     year: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
 
@@ -86,8 +86,6 @@ const classSchema = new mongoose.Schema(
       enum: ['active', 'completed', 'archived'],
       default: 'active',
     },
-
-    academicYear: String,
   },
   { timestamps: true }
 );

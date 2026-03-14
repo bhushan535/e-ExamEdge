@@ -47,10 +47,12 @@ import JoinClass from "./components/Student-ui/JoinClass";
 /* PRINCIPAL MANAGEMENT */
 import TeacherManagement from "./components/Teacher-ui/TeacherManagement";
 import OrgSettings from "./components/Teacher-ui/OrgSettings";
+import CurriculumManagement from "./components/Teacher-ui/CurriculumManagement";
 import Promotion from "./components/Teacher-ui/Promotion";
 import StudentManagement from "./components/Teacher-ui/StudentManagement";
 import Analytics from "./components/Teacher-ui/Analytics";
 import NoticeManagement from "./components/Teacher-ui/NoticeManagement";
+import CurriculumGallery from "./components/Teacher-ui/CurriculumGallery";
 
 /* PAGES */
 import ModeSelection from "./pages/ModeSelection";
@@ -207,6 +209,16 @@ function App() {
     <Route path="/Notices" element={
       <ProtectedRoute allowedRoles={['principal']}>
         <NoticeManagement />
+      </ProtectedRoute>
+    } />
+    <Route path="/Curriculum" element={
+      <ProtectedRoute allowedRoles={['principal', 'teacher']}>
+        <CurriculumGallery />
+      </ProtectedRoute>
+    } />
+    <Route path="/CurriculumManagement" element={
+      <ProtectedRoute allowedRoles={['principal']}>
+        <CurriculumManagement />
       </ProtectedRoute>
     } />
 

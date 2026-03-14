@@ -1,39 +1,65 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { FaUserGraduate, FaChalkboardTeacher, FaUniversity, FaArrowRight, FaShieldAlt } from 'react-icons/fa';
 import "./FrontPage.css";
-import gplogo from "./gplogo.jpeg"
 
 function FrontPage() {
     return (
-        <div className="front-container">
-            <div className="front-box">
-            <img src={gplogo} alt="college logo" className="college-logo" />
-
-            <h1 className="college-name">Government Polytechnic, Sakoli</h1>
-
-            <h2 className="project-title">Online Examination</h2>
-
-            <div className="button-group">
-                <Link to="/StudentLogin" className="btn student-btn">
-                    Student Login
-                </Link>
-
-                <Link to="/login?role=teacher" className="btn teacher-btn">
-                    Teacher Login
-                </Link>
-
-                <Link to="/login?role=principal" className="btn org-btn">
-                    Organization Login
-                </Link>
-            </div>
+        <div className="front-wrapper">
+            <div className="geometric-bg"></div>
             
-            <div className="signup-container">
-                <p>New to the platform?</p>
-                <Link to="/signup" className="signup-link">
-                    Create an account today
-                </Link>
-            </div>
-            </div>
+            <header className="main-nav">
+                <div className="nav-logo">
+                    <FaShieldAlt className="shield-logo" />
+                    <span>SecureExam <small>Pro</small></span>
+                </div>
+                <div className="nav-links">
+                    <Link to="/signup" className="nav-btn primary">Get Started</Link>
+                </div>
+            </header>
+
+            <main className="hero-section">
+                <div className="hero-content">
+                    <div className="hero-badge">Next-Gen Academic Evaluation</div>
+                    <h1 className="hero-title">
+                        Advanced Examination <br />
+                        <span>With AI Proctoring</span>
+                    </h1>
+                    <p className="hero-subtitle">
+                        A sophisticated, secure, and seamless platform for modern educational institutions to conduct high-integrity digital assessments.
+                    </p>
+                </div>
+
+                <div className="role-selection-grid">
+                    <Link to="/StudentLogin" className="role-card glass-card">
+                        <div className="card-icon student"><FaUserGraduate /></div>
+                        <h3>Student Portal</h3>
+                        <p>Access your scheduled assessments and view detailed performance metrics.</p>
+                        <div className="card-footer">Enter Portal <FaArrowRight /></div>
+                    </Link>
+
+                    <Link to="/login?role=teacher" className="role-card glass-card">
+                        <div className="card-icon teacher"><FaChalkboardTeacher /></div>
+                        <h3>Faculty Console</h3>
+                        <p>Manage courses, design intelligent assessments, and monitor student progress.</p>
+                        <div className="card-footer">Launch Console <FaArrowRight /></div>
+                    </Link>
+
+                    <Link to="/login?role=principal" className="role-card glass-card">
+                        <div className="card-icon org"><FaUniversity /></div>
+                        <h3>Institutional Admin</h3>
+                        <p>Configure organizational protocols, manage faculty, and overview institution analytics.</p>
+                        <div className="card-footer">Command Center <FaArrowRight /></div>
+                    </Link>
+                </div>
+
+                <div className="front-footer-cta">
+                    <p>New to the SecureExam ecosystem?</p>
+                    <Link to="/signup" className="cta-link">
+                        Initialize institution account <FaArrowRight />
+                    </Link>
+                </div>
+            </main>
         </div>
     );
 }

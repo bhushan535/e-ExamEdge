@@ -1,10 +1,11 @@
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import * as XLSX from "xlsx";
 import Toast      from "../Toast";
 import useToast   from "../useToast";
 import PopupModal from "../PopupModal";
-import { FaSchool, FaSearch, FaCheckSquare, FaSquare } from "react-icons/fa";
+import { FaSchool, FaSearch, FaCheckSquare, FaSquare, FaUsers, FaArrowLeft, FaLink, FaCopy, FaFileExport, FaFileAlt, FaFileUpload, FaEdit, FaTrash, FaIdBadge, FaGraduationCap, FaLayerGroup } from "react-icons/fa";
 import "./ViewClass.css";
 import { BASE_URL } from '../../config';
 
@@ -24,19 +25,60 @@ function ViewClass() {
 
   /* ================= FETCH CLASS ================= */
   const fetchClass = async () => {
-    const res = await fetch(`${BASE_URL}/class/${id}`);
-    const data = await res.json();
-    setCls(data);
+    try {
+      const res = await fetch(`${BASE_URL}/class/${id}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "Failed to fetch class.", "error");
+        return;
+      }
+      setCls(data);
+    } catch (err) {
+      showToast("Network error fetching class", "error");
+    }
   };
 
   useEffect(() => {
-    fetchClass();
+    if (token) {
+        fetchClass();
+    }
     // eslint-disable-next-line
-  }, [id]);
+  }, [id, token]);
 
-  if (!cls) return <p>Loading...</p>;
+  /* ================= SEARCH ORG STUDENTS ================= */
+  const searchOrgStudents = async (q) => {
+    setIsSearching(true);
+    try {
+      const res = await fetch(`${BASE_URL}/class/${id}/org-students?query=${q}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrgStudents(data.students);
+      }
+    } catch (err) {
+      showToast("Error searching students", "error");
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-  const sortedStudents = [...cls.students].sort((a, b) => a.rollNo - b.rollNo);
+  useEffect(() => {
+    if (showOrgAddModal) {
+      searchOrgStudents(orgSearchQuery);
+    }
+  }, [orgSearchQuery, showOrgAddModal]);
+
+  if (!cls) return (
+    <div className="view-class-loading glass-premium">
+        <div className="loader"></div>
+        <p>Synchronizing class data...</p>
+    </div>
+  );
+ 
+  const sortedStudents = Array.isArray(cls.students) ? [...cls.students].sort((a, b) => a.rollNo - b.rollNo) : [];
 
   /* ================= JOIN LINK (dynamic) ================= */
   const joinLink = `${window.location.origin}/join-class/${id}`;
@@ -111,7 +153,10 @@ function ViewClass() {
 
         const res  = await fetch(`${BASE_URL}/class/import-students/${id}`, {
           method:  "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body:    JSON.stringify({ students }),
         });
         const data = await res.json();
@@ -131,10 +176,22 @@ function ViewClass() {
   };
 
   /* ================= DELETE STUDENT ================= */
-  const confirmDeleteStudent = async (studentId) => {
-    await fetch(`${BASE_URL}/class/${id}/student/${studentId}`, { method: "DELETE" });
-    fetchClass();
-    showToast("Student removed.", "info");
+  const confirmDeleteStudent = async (enrollment) => {
+    try {
+      const res = await fetch(`${BASE_URL}/class/${id}/student/${enrollment}`, { 
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Student removed.", "success");
+        fetchClass();
+      } else {
+        showToast(data.message || "Removal failed", "error");
+      }
+    } catch (err) {
+      showToast("Error removing student", "error");
+    }
   };
 
   /* ================= EDIT STUDENT ================= */
@@ -157,30 +214,6 @@ function ViewClass() {
     fetchClass();
     showToast("Student updated!", "success");
   };
-
-  /* ================= SEARCH ORG STUDENTS ================= */
-  const searchOrgStudents = async (q) => {
-    setIsSearching(true);
-    try {
-      const res = await fetch(`${BASE_URL}/class/${id}/org-students?query=${q}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setOrgStudents(data.students);
-      }
-    } catch (err) {
-      showToast("Error searching students", "error");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  useEffect(() => {
-    if (showOrgAddModal) {
-      searchOrgStudents(orgSearchQuery);
-    }
-  }, [orgSearchQuery, showOrgAddModal]);
 
   const toggleStudentSelection = (enrollment) => {
     setSelectedEnrollments(prev => 
@@ -217,83 +250,112 @@ function ViewClass() {
   };
 
   return (
-    <div className="view-class-container">
+    <div className="vc-premium-overlay animate-fade-in">
       <Toast toasts={toasts} removeToast={removeToast} />
-      <h2>Class Details</h2>
-
-      <div>
-        <p><b>Class Name:</b> {cls.className}</p>
-        <p><b>Semester:</b> {cls.semester}</p>
-        <p><b>Branch:</b> {cls.branch}</p>
-        <p><b>Year:</b> {cls.year}</p>
-      </div>
-
-      <div className="class-link-box">
-        <p><b>Class Join Link:</b></p>
-        <input value={joinLink} readOnly />
-        <button onClick={() => {
-          navigator.clipboard.writeText(joinLink);
-          showToast("Link copied to clipboard!", "success");
-        }}>
-          Copy Link
+      
+      <div className="vc-nav-top">
+        <button className="vc-back-btn" onClick={() => window.history.back()}>
+            <FaArrowLeft /> Back to Dashboard
         </button>
       </div>
 
-      <hr />
+      <div className="vc-premium-container">
+        {/* Left column: Class Metadata */}
+        <div className="vc-metadata-section glass-premium">
+            <div className="vc-header-visual">
+                <div className="vc-brand-badge">Class Profile</div>
+                <h1>{cls.className}</h1>
+                <p className="vc-subtitle">Active Academic Cohort</p>
+            </div>
 
-      <div className="export-row">
-        <h3>Joined Students ({sortedStudents.length})</h3>
-        <div className="action-btns-row">
-          {user?.mode === 'organization' && (
-            <button className="org-add-btn" onClick={() => setShowOrgAddModal(true)}>
-              <FaSchool /> Add From Organization
-            </button>
-          )}
-          <button className="export-btn" onClick={exportStudents}>📥 Export List</button>
-          <button className="template-btn" onClick={downloadTemplate}>📄 Download Template</button>
-          <label className="import-btn">
-            📤 Import Students
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              style={{ display: "none" }}
-              onChange={handleImport}
-            />
-          </label>
+            <div className="vc-info-grid">
+                <div className="vc-info-item">
+                    <label><FaLayerGroup /> Branch</label>
+                    <span>{cls.branch}</span>
+                </div>
+                <div className="vc-info-item">
+                    <label><FaGraduationCap /> Semester</label>
+                    <span>{cls.semester}</span>
+                </div>
+            </div>
+
+            <div className="vc-link-card">
+                <div className="link-header">
+                    <FaLink /> <span>Student Join Link</span>
+                </div>
+                <div className="link-input-group">
+                    <input value={joinLink} readOnly />
+                    <button onClick={() => {
+                        navigator.clipboard.writeText(joinLink);
+                        showToast("Link copied!", "success");
+                    }}><FaCopy /></button>
+                </div>
+            </div>
+
+            <div className="vc-actions-panel">
+                <button className="vc-panel-btn org" onClick={() => setShowOrgAddModal(true)}>
+                    <FaSchool /> Add From Institution
+                </button>
+                <div className="vc-action-row-split">
+                    <button className="vc-panel-btn export" onClick={exportStudents}>
+                        <FaFileExport /> Export
+                    </button>
+                    <button className="vc-panel-btn template" onClick={downloadTemplate}>
+                        <FaFileAlt /> Template
+                    </button>
+                </div>
+                <label className="vc-panel-btn import">
+                    <FaFileUpload /> Import Students
+                    <input type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
+                </label>
+            </div>
+        </div>
+
+        {/* Right column: Students Table */}
+        <div className="vc-roster-section glass-premium">
+            <div className="vc-roster-header">
+                <div>
+                    <h3><FaUsers /> Student Roster</h3>
+                    <p>{sortedStudents.length} Students Enrolled</p>
+                </div>
+            </div>
+
+            <div className="vc-table-container custom-scrollbar">
+                {sortedStudents.length === 0 ? (
+                    <div className="vc-empty-roster">
+                        <div className="empty-icon"><FaUsers /></div>
+                        <p>No students have joined this class section yet.</p>
+                        <span className="hint">Share the join link or import students to get started.</span>
+                    </div>
+                ) : (
+                    <table className="vc-roster-table">
+                        <thead>
+                            <tr>
+                                <th>Roll</th>
+                                <th>Enrollment</th>
+                                <th>Student Name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedStudents.map((s) => (
+                            <tr key={s._id}>
+                                <td><span className="roll-pill">{s.rollNo}</span></td>
+                                <td className="enroll-txt">{s.enrollment}</td>
+                                <td className="name-txt">{s.name}</td>
+                                <td className="action-td">
+                                    <button className="mini-action-btn edit" onClick={() => editStudent(s)}><FaEdit /></button>
+                                    <button className="mini-action-btn delete" onClick={() => setDeleteModal({ open: true, targetId: s.enrollment })}><FaTrash /></button>
+                                </td>
+                            </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
         </div>
       </div>
-
-      {sortedStudents.length === 0 ? (
-        <p className="no-students">No students joined yet</p>
-      ) : (
-        <table className="students-table">
-          <thead>
-            <tr>
-              <th>Roll No.</th>
-              <th>Enrollment No.</th>
-              <th>Student Name</th>
-              <th>Password</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedStudents.map((s) => (
-              <tr key={s._id}>
-                <td className="roll">{s.rollNo}</td>
-                <td>{s.enrollment}</td>
-                <td>{s.name}</td>
-                <td>{s.password}</td>
-                <td>
-                  <button className="edit-btn" onClick={() => editStudent(s)}>Edit</button>
-                  <button className="delete-btn" onClick={() => setDeleteModal({ open: true, targetId: s._id })}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {/* Delete Student Confirmation */}
+     {/* Delete Student Confirmation */}
       <PopupModal
         isOpen={deleteModal.open}
         type="error"
@@ -310,58 +372,57 @@ function ViewClass() {
       />
       {/* Add From Organization Modal */}
       {showOrgAddModal && (
-        <div className="modal-overlay">
-          <div className="modal-content org-search-modal">
+        <div className="vc-modal-overlay animate-fade-in">
+          <div className="vc-modal-content glass-premium">
             <div className="modal-header">
-              <h3><FaSchool /> Add Students from Institution</h3>
-              <button className="close-btn" onClick={() => setShowOrgAddModal(false)}>&times;</button>
+              <h3><FaSchool /> Institutional Pool</h3>
+              <p>Select students to synchronize with this class</p>
             </div>
             
-            <div className="org-search-bar">
-              <FaSearch className="search-icon" />
+            <div className="vc-modal-search">
+              <FaSearch />
               <input 
                 type="text" 
-                placeholder="Search by Name or Enrollment..." 
+                placeholder="Search name or enrollment..." 
                 value={orgSearchQuery}
                 onChange={(e) => setOrgSearchQuery(e.target.value)}
               />
             </div>
-
-            <div className="org-students-list">
+ 
+            <div className="vc-modal-list custom-scrollbar">
               {isSearching ? (
-                <div className="search-loading">Searching pool...</div>
+                <div className="vc-loading-state">Synchronizing pool...</div>
               ) : orgStudents.length === 0 ? (
-                <div className="no-results">No students found or already in class.</div>
+                <div className="vc-empty-state">No eligible students found in the pool.</div>
               ) : (
                 orgStudents.map(student => (
                   <div 
                     key={student.enrollmentNo} 
-                    className={`org-student-item ${selectedEnrollments.includes(student.enrollmentNo) ? 'selected' : ''}`}
+                    className={`vc-student-item ${selectedEnrollments.includes(student.enrollmentNo) ? 'selected' : ''}`}
                     onClick={() => toggleStudentSelection(student.enrollmentNo)}
                   >
-                    <div className="selection-box">
+                    <div className="vc-check-box">
                       {selectedEnrollments.includes(student.enrollmentNo) ? <FaCheckSquare /> : <FaSquare />}
                     </div>
-                    <div className="student-info">
+                    <div className="vc-student-info">
                       <span className="name">{student.userId?.name}</span>
-                      <span className="enrollment">{student.enrollmentNo}</span>
-                      <span className="branch">{student.branch}</span>
+                      <span className="sub">{student.enrollmentNo} • {student.branch}</span>
                     </div>
                   </div>
                 ))
               )}
             </div>
-
-            <div className="modal-footer">
-              <span className="selected-count">{selectedEnrollments.length} selected</span>
-              <div className="btn-group">
-                <button className="cancel-btn" onClick={() => setShowOrgAddModal(false)}>Cancel</button>
+ 
+            <div className="vc-modal-footer">
+              <span className="vc-selected-tag">{selectedEnrollments.length} Selected</span>
+              <div className="vc-modal-btns">
+                <button className="vc-btn-ghost" onClick={() => setShowOrgAddModal(false)}>Cancel</button>
                 <button 
-                  className="add-btn-final" 
+                  className="vc-btn-primary" 
                   disabled={selectedEnrollments.length === 0}
                   onClick={handleAddOrgStudents}
                 >
-                  Add to Class
+                  Sync to Class
                 </button>
               </div>
             </div>

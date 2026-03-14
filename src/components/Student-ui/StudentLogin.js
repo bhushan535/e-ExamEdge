@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import "./StudentLogin.css";
+import { FaUserGraduate, FaLock, FaArrowLeft, FaIdCard } from "react-icons/fa";
+import "../Teacher-ui/TeacherLogin.css"; // Corrected path
 
 function StudentLogin() {
   const { studentLogin } = useAuth();
@@ -12,8 +13,8 @@ function StudentLogin() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    if (!enrollment.trim()) { setErrorMsg("Please enter your enrollment number."); return; }
-    if (!password.trim())   { setErrorMsg("Please enter your password.");           return; }
+    if (!enrollment.trim()) { setErrorMsg("Enrollment required"); return; }
+    if (!password.trim())   { setErrorMsg("Password required");   return; }
 
     setLoading(true);
     setErrorMsg("");
@@ -22,41 +23,59 @@ function StudentLogin() {
       await studentLogin(enrollment, password);
       navigate("/StudentHome");
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || "Invalid credentials. Please try again.");
+      setErrorMsg(err.response?.data?.message || "Identification failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container">
-      <div className="box">
-        <h2>Student Login</h2>
+    <div className="login-wrapper">
+      <div className="login-bg-overlay student-theme"></div>
+      <Link to="/" className="back-to-home"><FaArrowLeft /> Home</Link>
+      
+      <div className="login-glass-card animate-slide-up">
+        <div className="login-header">
+           <div className="login-icon-box student">
+             <FaUserGraduate />
+           </div>
+           <h2>Student Portal</h2>
+           <p>Enter your credentials to access your dashboard</p>
+        </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
-          <input
-            className="input"
-            type="text"
-            placeholder="Enrollment Number"
-            value={enrollment}
-            autoFocus
-            onChange={(e) => { setEnrollment(e.target.value); setErrorMsg(""); }}
-          />
+        <form className="login-form" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+          <div className="input-field-v2">
+            <FaIdCard className="field-icon" />
+            <input
+              type="text"
+              placeholder="Enrollment Number"
+              value={enrollment}
+              autoFocus
+              onChange={(e) => { setEnrollment(e.target.value); setErrorMsg(""); }}
+            />
+          </div>
 
-          <input
-            className="input"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setErrorMsg(""); }}
-          />
+          <div className="input-field-v2">
+            <FaLock className="field-icon" />
+            <input
+              type="password"
+              placeholder="Secure Password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setErrorMsg(""); }}
+            />
+          </div>
 
-          {errorMsg && <p className="login-error-msg">{errorMsg}</p>}
+          {errorMsg && <div className="login-error-v2">{errorMsg}</div>}
 
-          <button type="submit" className="btn" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+          <button type="submit" className="login-submit-v2 student" disabled={loading}>
+            {loading ? "Identifying..." : "Portal Access"}
           </button>
         </form>
+
+        <div className="login-footer-links">
+          <span>Need access?</span>
+          <Link to="/signup">Contact your administrator</Link>
+        </div>
       </div>
     </div>
   );

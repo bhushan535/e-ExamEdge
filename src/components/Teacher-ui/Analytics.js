@@ -6,7 +6,8 @@ import {
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { FaChartLine, FaUsers, FaUserGraduate, FaFileAlt } from 'react-icons/fa';
+import { FaChartLine, FaUsers, FaUserGraduate, FaFileAlt, FaChartPie, FaChartBar } from 'react-icons/fa';
+import BackButton from '../BackButton';
 import './Analytics.css';
 
 const Analytics = () => {
@@ -31,10 +32,23 @@ const Analytics = () => {
     if (token) fetchAnalytics();
   }, [token]);
 
-  if (loading) return <div className="loader">Analyzing institutional data...</div>;
-  if (!data) return <div className="error">No analytics data available.</div>;
+  if (loading) return (
+    <div className="analytics-loading">
+        <div className="pulse-loader"></div>
+        <p>Synthesizing institutional intelligence...</p>
+    </div>
+  );
+  
+  if (!data) return (
+    <div className="analytics-error">
+        <FaChartLine />
+        <h3>Data Unavailable</h3>
+        <p>No analytics patterns detected for this cycle.</p>
+        <BackButton to="/TeacherHome" />
+    </div>
+  );
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
 
   return (
     <div className="analytics-container">

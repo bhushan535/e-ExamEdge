@@ -17,7 +17,8 @@ import {
   FaCog,
   FaChartBar,
   FaChartLine,
-  FaBell
+  FaBell,
+  FaLayerGroup
 } from "react-icons/fa";
 
 function TeacherHome() {
@@ -28,7 +29,9 @@ function TeacherHome() {
 
   useEffect(() => {
     if (token) {
-      axios.get('/api/notices')
+      axios.get('/api/notices', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
         .then(res => setNotices(res.data.notices))
         .catch(err => console.error("Notice error:", err));
     }
@@ -64,7 +67,7 @@ function TeacherHome() {
            )}
            <div className="branding-info">
               <h1 className="welcome-text">
-                {org?.name || (user?.role === 'principal' ? 'Organization Dashboard' : 'Teacher Dashboard')}
+                {org?.organizationName || org?.name || (user?.role === 'principal' ? 'Organization Dashboard' : 'Teacher Dashboard')}
               </h1>
               <p className="user-welcome">Welcome back, {user?.name || "User"}</p>
            </div>
@@ -174,6 +177,11 @@ function TeacherHome() {
               <h3>Settings</h3>
               <p>Organization profile</p>
             </div>
+            <div className="card curriculum-card" onClick={() => navigate(user.role === 'principal' ? "/CurriculumManagement" : "/Curriculum")}>
+              <FaLayerGroup className="card-icon" />
+              <h3>Curriculum</h3>
+              <p>{user.role === 'principal' ? "Manage academic structure" : "Institutional academic overview"}</p>
+            </div>
           </>
         )}
 
@@ -193,6 +201,7 @@ function TeacherHome() {
           </>
         )}
       </div>
+
     </div>
   );
 }

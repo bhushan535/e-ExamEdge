@@ -28,7 +28,6 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
   const [warningCount, setWarningCount] = useState(0);
   const [lastViolation, setLastViolation] = useState(null);
 
-  // Deep merge config with granular settings from the exam
   const mergedConfig = useMemo(() => {
     const base = {
       ...defaultConfig,
@@ -62,10 +61,6 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
 
     return base;
   }, [config]);
-
-  if (config && config.enabled === false) {
-    return null;
-  }
 
   const submitExam = () => onAutoSubmit?.();
   const warnStudent = (msg) => onWarning?.(msg);
@@ -190,6 +185,10 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       stopAudioDetector();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (config && config.enabled === false) {
+    return null;
+  }
 
   return (
     <>
