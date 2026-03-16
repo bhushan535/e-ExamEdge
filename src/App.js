@@ -1,62 +1,60 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 /* FRONT PAGE */
 import FrontPage from "./components/Authentication/FrontPage";
+import Registration from "./components/Authentication/Registration";
+import ModeSelection from "./pages/ModeSelection";
 
 /* STUDENT AUTH */
-import StudentLogin from "./components/Student-ui/StudentLogin";
+import StudentLogin from "./components/Student-ui/Auth/StudentLogin";
+import StudentClassLogin from "./components/Student-ui/Auth/StudentClassLogin";
 
 /* TEACHER AUTH */
-import TeacherLogin from "./components/Teacher-ui/TeacherLogin";
+import TeacherLogin from "./components/Teacher-ui/Auth/TeacherLogin";
 
 /* DASHBOARDS */
-import TeacherHome from "./components/Teacher-ui/TeacherHome";
-import StudentHome from "./components/Student-ui/StudentHome";
+import TeacherHome from "./components/Teacher-ui/Dashboard/TeacherHome";
+import Analytics from "./components/Teacher-ui/Dashboard/Analytics";
+import StudentHome from "./components/Student-ui/Dashboard/StudentHome";
 
 /* TEACHER CLASS MANAGEMENT */
-import CreateClass from "./components/Teacher-ui/CreateClass";
-import Classes from "./components/Teacher-ui/Classes";
-import ViewClass from "./components/Teacher-ui/ViewClass";
-import EditClass from "./components/Teacher-ui/EditClass";
+import CreateClass from "./components/Teacher-ui/Classes/CreateClass";
+import Classes from "./components/Teacher-ui/Classes/Classes";
+import ViewClass from "./components/Teacher-ui/Classes/ViewClass";
+import EditClass from "./components/Teacher-ui/Classes/EditClass";
 
 /* EXAM MANAGEMENT */
-import CreateExam from "./components/Teacher-ui/CreateExam";
-import Exams from "./components/Teacher-ui/Exams";
-import AddQuestion from "./components/Teacher-ui/AddQuestion";
-import EditExam from "./components/Teacher-ui/EditExam";
+import CreateExam from "./components/Teacher-ui/Exams/CreateExam";
+import Exams from "./components/Teacher-ui/Exams/Exams";
+import AddQuestion from "./components/Teacher-ui/Exams/AddQuestion";
+import EditExam from "./components/Teacher-ui/Exams/EditExam";
+import ExamResults from "./components/Teacher-ui/Exams/ExamResults";
 
 /* STUDENT EXAM */
-import AttemptExam from "./components/Student-ui/AttemptExam";
-import AttemptExamPage from "./components/Student-ui/AttemptExamPage";
-import ExamInstructions from "./components/Student-ui/ExamInstructions";
-import Cameracheckscreen from "./components/Student-ui/Cameracheckscreen";
+import AttemptExam from "./components/Student-ui/Exams/AttemptExam";
+import AttemptExamPage from "./components/Student-ui/Exams/AttemptExamPage";
+import ExamInstructions from "./components/Student-ui/Exams/ExamInstructions";
+import Cameracheckscreen from "./components/Student-ui/Exams/Cameracheckscreen";
+import ExamStartCountdown from "./components/Student-ui/Exams/ExamStartCountdown";
+import JoinClass from "./components/Student-ui/Exams/JoinClass";
 
 /* RESULTS */
-import StudentResults from "./components/Teacher-ui/StudentResults";
-import ExamResults from "./components/Teacher-ui/ExamResults";
-import StudentResult from "./components/Student-ui/StudentResult";
-import ExamStartCountdown from "./components/Student-ui/ExamStartCountdown";
-
-/* CLASS JOIN */
-import StudentClassLogin from "./components/Student-ui/StudentClassLogin";
-import JoinClass from "./components/Student-ui/JoinClass";
+import StudentResults from "./components/Teacher-ui/Exams/StudentResults";
+import StudentResult from "./components/Student-ui/Results/StudentResult";
 
 /* PRINCIPAL MANAGEMENT */
-import TeacherManagement from "./components/Teacher-ui/TeacherManagement";
-import OrgSettings from "./components/Teacher-ui/OrgSettings";
-import CurriculumManagement from "./components/Teacher-ui/CurriculumManagement";
-import Promotion from "./components/Teacher-ui/Promotion";
-import StudentManagement from "./components/Teacher-ui/StudentManagement";
-import Analytics from "./components/Teacher-ui/Analytics";
-import NoticeManagement from "./components/Teacher-ui/NoticeManagement";
-import CurriculumGallery from "./components/Teacher-ui/CurriculumGallery";
+import TeacherManagement from "./components/Teacher-ui/Management/TeacherManagement";
+import Promotion from "./components/Teacher-ui/Management/Promotion";
+import StudentManagement from "./components/Teacher-ui/Management/StudentManagement";
+import NoticeManagement from "./components/Teacher-ui/Management/NoticeManagement";
 
-/* PAGES */
-import ModeSelection from "./pages/ModeSelection";
-import Registration from "./components/Authentication/Registration";
+/* SETTINGS */
+import OrgSettings from "./components/Teacher-ui/Settings/OrgSettings";
+import CurriculumManagement from "./components/Teacher-ui/Settings/CurriculumManagement";
+import CurriculumGallery from "./components/Teacher-ui/Settings/CurriculumGallery";
 
 
 function App() {

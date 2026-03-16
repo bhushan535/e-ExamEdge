@@ -5,7 +5,47 @@ const User = require('../models/User');
 const TeacherProfile = require('../models/TeacherProfile');
 const Organization = require('../models/Organization');
 
-// Consolidated authorization for principal routes
+// 1. Organization Management (Read-only for Teachers, Full for Principals)
+router.get('/organization', authenticate, async (req, res) => {
+  try {
+    if (req.userRole !== 'principal' && req.userRole !== 'teacher') {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+    const organization = await Organization.findById(req.organizationId);
+    if (!organization) return res.status(404).json({ success: false, message: 'Registry not found' });
+    res.json({ success: true, organization });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Teacher accessible POST/PUT routes
+router.put('/teacher/curriculum', authenticate, async (req, res) => {
+  try {
+    if (req.userRole !== 'principal' && req.userRole !== 'teacher') {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+    const { branches, academicYears, semesters, subjects } = req.body;
+    const organization = await Organization.findById(req.organizationId);
+    if (!organization) return res.status(404).json({ success: false, message: "Organization record missing" });
+
+    // Only allow updating curriculum fields
+    if (branches) organization.branches = branches;
+    if (academicYears) organization.academicYears = academicYears;
+    if (semesters) organization.semesters = semesters;
+    if (subjects) {
+      organization.subjects = subjects;
+      organization.markModified('subjects');
+    }
+
+    const savedOrg = await organization.save();
+    res.json({ success: true, message: 'Curriculum updated successfully', organization: savedOrg });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Consolidated authorization for principal-only routes
 router.use(authenticate, (req, res, next) => {
     if (req.userRole === 'principal') {
         return next();
@@ -13,12 +53,32 @@ router.use(authenticate, (req, res, next) => {
     return res.status(403).json({ success: false, message: "Access denied. Principals only." });
 });
 
-// 1. Organization Management
-router.get('/organization', async (req, res) => {
+// Organization update (Principal only)
+router.put('/organization', async (req, res) => {
   try {
+    const { 
+        organizationName,
+        institutionType,
+        address, logo, settings, branches, academicYears, semesters, subjects 
+    } = req.body;
     const organization = await Organization.findById(req.organizationId);
-    if (!organization) return res.status(404).json({ success: false, message: 'Registry not found' });
-    res.json({ success: true, organization });
+    if (!organization) return res.status(404).json({ success: false, message: "Organization record missing" });
+
+    if (organizationName) organization.organizationName = organizationName;
+    if (institutionType) organization.institutionType = institutionType;
+    if (address) organization.address = address;
+    if (logo !== undefined) organization.logo = logo;
+    if (settings) organization.settings = settings;
+    if (branches) organization.branches = branches;
+    if (academicYears) organization.academicYears = academicYears;
+    if (semesters) organization.semesters = semesters;
+    if (subjects) {
+      organization.subjects = subjects;
+      organization.markModified('subjects');
+    }
+
+    const savedOrg = await organization.save();
+    res.json({ success: true, message: 'Archive updated', organization: savedOrg });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -128,16 +188,18 @@ router.get('/students', async (req, res) => {
       );
     }
 
-    // Dynamic metadata for filters
-    const allBranches = await Student.distinct('branch', { organizationId: req.organizationId });
-    const allSemesters = await Student.distinct('currentSemester', { organizationId: req.organizationId });
+    // Fetch stabilized metadata from Organization settings instead of dynamic calculation
+    const organization = await Organization.findById(req.organizationId);
 
     res.json({ 
       success: true, 
       students,
       metadata: {
-        branches: allBranches.sort(),
-        semesters: allSemesters.sort((a,b) => a - b)
+        branches: organization?.branches || [],
+        semesters: (organization?.semesters || [])
+          .map(sem => Number(sem))
+          .filter(num => !isNaN(num))
+          .sort((a, b) => a - b)
       }
     });
   } catch (error) {
@@ -148,22 +210,17 @@ router.get('/students', async (req, res) => {
 router.put('/organization', async (req, res) => {
   try {
     const { 
-        name, organizationName,
-        type, institutionType,
+        organizationName,
+        institutionType,
         address, logo, settings, branches, academicYears, semesters, subjects 
     } = req.body;
     const organization = await Organization.findById(req.organizationId);
     if (!organization) return res.status(404).json({ success: false, message: "Organization record missing" });
 
-    // Sync redundant fields
     if (organizationName) organization.organizationName = organizationName;
-    if (name) organization.organizationName = name;
-    
     if (institutionType) organization.institutionType = institutionType;
-    if (type) organization.institutionType = type;
-
     if (address) organization.address = address;
-    if (logo) organization.logo = logo;
+    if (logo !== undefined) organization.logo = logo;
     if (settings) organization.settings = settings;
     if (branches) organization.branches = branches;
     if (academicYears) organization.academicYears = academicYears;
@@ -232,6 +289,143 @@ router.get('/analytics', async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+});
+
+// 4. Data Sync Tools
+router.post('/sync-teacher-stats', async (req, res) => {
+    try {
+        const Class = require('../models/Class');
+        const Exam = require('../models/Exam');
+        const organizationId = req.organizationId;
+
+        // 1. Get all teachers in organization
+        const profiles = await TeacherProfile.find({ organizationId });
+        let profileCount = 0;
+        let classesLinked = 0;
+        let examsLinked = 0;
+
+        for (let profile of profiles) {
+            // Find all classes created by this user
+            const classes = await Class.find({ createdBy: profile.userId, organizationId });
+            profile.classesCreated = classes.map(c => c._id);
+            classesLinked += classes.length;
+
+            // Find all exams created by this user
+            const exams = await Exam.find({ createdBy: profile.userId, organizationId });
+            profile.examsCreated = exams.map(e => e._id);
+            examsLinked += exams.length;
+
+            await profile.save();
+            profileCount++;
+        }
+
+        res.json({
+            success: true,
+            message: `Synchronization complete.`,
+            stats: {
+                profilesUpdated: profileCount,
+                classesLinked,
+                examsLinked
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post('/cleanup-students', async (req, res) => {
+    try {
+        const Student = require('../models/Student');
+        const Class = require('../models/Class');
+        const organizationId = req.organizationId;
+        
+        const students = await Student.find({ organizationId });
+        let fixed = 0;
+        let userCreated = 0;
+
+        for (let student of students) {
+            let changed = false;
+            
+            // 1. Fix User Linkage
+            let user = await User.findById(student.userId);
+            if (!user) {
+                const syntheticEmail = `${student.enrollmentNo.toLowerCase()}@institution.com`;
+                user = await User.findOne({ email: syntheticEmail });
+                
+                if (!user) {
+                    user = new User({
+                        name: "FixMe Student", 
+                        email: syntheticEmail,
+                        password: "ChangeMe@123", // Default secure-ish password
+                        role: 'student',
+                        mode: 'organization',
+                        organizationId: organizationId
+                    });
+                    await user.save();
+                    userCreated++;
+                }
+                student.userId = user._id;
+                changed = true;
+            }
+
+            // 2. Fix Branch/Semester/RollNo from first available class record if empty
+            if (!student.branch || !student.currentSemester || !student.rollNo) {
+                const classRole = await Class.findOne({ 
+                    organizationId, 
+                    'students.enrollment': student.enrollmentNo 
+                });
+                if (classRole) {
+                    if (!student.branch) student.branch = classRole.branch;
+                    if (!student.currentSemester) student.currentSemester = classRole.semester;
+                    
+                    // Sync Roll No if exists in class record
+                    const studentInClass = classRole.students.find(st => st.enrollment === student.enrollmentNo);
+                    if (studentInClass && !student.rollNo) {
+                        student.rollNo = studentInClass.rollNo;
+                    }
+                    
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                await student.save();
+                fixed++;
+            }
+        }
+
+        res.json({ 
+            success: true, 
+            message: `Cleanup finalized. Profiles linked/fixed: ${fixed}, Missing users created: ${userCreated}` 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.delete('/student/:studentId', async (req, res) => {
+    try {
+        const Student = require('../models/Student');
+        const Class = require('../models/Class');
+        const student = await Student.findById(req.params.studentId);
+        if (!student || student.organizationId.toString() !== req.organizationId.toString()) {
+            return res.status(404).json({ success: false, message: 'Student not found in your database' });
+        }
+
+        // 1. Wipe from all classes
+        await Class.updateMany(
+            { organizationId: req.organizationId },
+            { $pull: { students: { enrollment: student.enrollmentNo } } }
+        );
+
+        // 2. Delete Profile and User
+        await Student.findByIdAndDelete(req.params.studentId);
+        await User.findByIdAndDelete(student.userId);
+
+        res.json({ success: true, message: 'Student and associated system records purged successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 });
 
 module.exports = router;

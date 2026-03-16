@@ -11,6 +11,9 @@ const studentSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
+  rollNo: {
+    type: Number,
+  },
   organizationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",

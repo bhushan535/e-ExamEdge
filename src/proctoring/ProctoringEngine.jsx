@@ -134,6 +134,8 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
 
   // Mount/Unmount effect for security detectors
   useEffect(() => {
+    if (config?.enabled === false) return;
+
     let active = true;
 
     if (config?.disableTabSwitching !== false) {

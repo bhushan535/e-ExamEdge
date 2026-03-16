@@ -46,18 +46,19 @@ const generateToken = (userId) => {
 // STUDENT LOGIN
 router.post("/student/login", async (req, res) => {
   try {
-    const { enrollment, password } = req.body;
+    const enrollmentInput = req.body.enrollment?.toString().trim().toUpperCase();
+    const { password } = req.body;
 
-    if (!enrollment || !password) {
+    if (!enrollmentInput || !password) {
       return res.status(400).json({ success: false, message: "Enrollment and password are required" });
     }
 
     // 1. Find Student Profile by enrollment
-    const studentProfile = await Student.findOne({ enrollmentNo: enrollment.toUpperCase() }).populate('userId');
+    const studentProfile = await Student.findOne({ enrollmentNo: enrollmentInput }).populate('userId');
     
     if (!studentProfile || !studentProfile.userId) {
       // Fallback: Check if user exists by institutional email directly (in case profile is missing but user exists)
-      const institutionalEmail = `${enrollment.toLowerCase()}@institution.com`;
+      const institutionalEmail = `${enrollmentInput.toLowerCase()}@institution.com`;
       const user = await User.findOne({ email: institutionalEmail });
       
       if (!user) {
@@ -70,6 +71,11 @@ router.post("/student/login", async (req, res) => {
          return res.status(401).json({ success: false, message: "Invalid enrollment or password" });
       }
 
+      // Look up classId
+      let classId = null;
+      const classDoc = await Class.findOne({ 'students.enrollment': enrollmentInput });
+      if (classDoc) classId = classDoc._id;
+
       const token = generateToken(user._id);
       return res.json({
         success: true,
@@ -80,7 +86,8 @@ router.post("/student/login", async (req, res) => {
           email: user.email,
           role: user.role,
           mode: user.mode,
-          enrollment: enrollment.toUpperCase()
+          enrollment: enrollmentInput,
+          classId: classId
         }
       });
     }
@@ -96,13 +103,18 @@ router.post("/student/login", async (req, res) => {
     const token = generateToken(user._id);
     let organizationData = null;
 
+    // Look up classId from Class collection
+    let classId = null;
+    const classDoc = await Class.findOne({ 'students.enrollment': studentProfile.enrollmentNo });
+    if (classDoc) classId = classDoc._id;
+
     if (user.organizationId) {
       const org = await Organization.findById(user.organizationId);
       if (org) {
         organizationData = {
           id: org._id,
-          name: org.name,
-          type: org.type,
+          name: org.organizationName || org.name,
+          type: org.institutionType || org.type,
           logo: org.logo
         };
       }
@@ -119,7 +131,8 @@ router.post("/student/login", async (req, res) => {
         mode: user.mode,
         enrollment: studentProfile.enrollmentNo,
         branch: studentProfile.branch,
-        semester: studentProfile.currentSemester
+        semester: studentProfile.currentSemester,
+        classId: classId
       },
       organization: organizationData
     });

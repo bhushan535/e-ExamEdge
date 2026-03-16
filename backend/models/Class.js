@@ -16,7 +16,7 @@ const classSchema = new mongoose.Schema(
 
     year: {
       type: String,
-      required: false,
+      required: true,
       trim: true,
     },
 

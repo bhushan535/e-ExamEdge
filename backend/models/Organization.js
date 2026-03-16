@@ -1,20 +1,12 @@
 const mongoose = require('mongoose');
 
 const organizationSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: false,
-  },
-  type: {
-    type: String,
-    required: false,
-  },
   principalId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  logoUrl: { type: String, default: '' },
+  logo: { type: String, default: '' },
   address: {
     type: String,
     default: '',
@@ -25,9 +17,9 @@ const organizationSchema = new mongoose.Schema({
     enum: ['School','College','University','Institute'], 
     default: 'School' 
   },
-  branches: [{ type: String }],
-  academicYears: [{ type: String }],
-  semesters: [{ type: String }],
+  branches: [String],
+  academicYears: [String],
+  semesters: [String],
   permissions: {
     allowTeacherStudentImport: { type: Boolean, default: false },
     principalApprovalLoop: { type: Boolean, default: false },

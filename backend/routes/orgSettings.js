@@ -13,7 +13,7 @@ router.get('/settings', authenticate, isPrincipal, async (req, res) => {
                 organizationName: '',
                 institutionType: 'School',
                 address: '',
-                logoUrl: '',
+                logo: '',
                 branches: [],
                 academicYears: [],
                 semesters: [],
@@ -35,33 +35,35 @@ router.get('/settings', authenticate, isPrincipal, async (req, res) => {
 // @desc    Update organization settings (Handles Base64 logo in body)
 router.put('/settings', authenticate, isPrincipal, async (req, res) => {
     try {
-        const { 
-            organizationName, 
-            institutionType, 
-            address, 
-            branches, 
-            academicYears, 
-            semesters, 
-            subjects, 
-            permissions,
-            logoUrl // Base64 string from frontend
-        } = req.body;
+        const fields = [
+            'organizationName', 'institutionType', 'address', 
+            'branches', 'academicYears', 'semesters', 'subjects', 'logo'
+        ];
+        
+        const updateData = {};
+        
+        // Add top-level fields if they exist
+        fields.forEach(field => {
+            if (req.body[field] !== undefined) {
+                updateData[field] = req.body[field];
+            }
+        });
 
-        if (!organizationName || organizationName.length < 2) {
-            return res.status(400).json({ message: 'Organization name is required (min 2 chars)' });
+        // Validation only if organizationName is being updated
+        if (updateData.organizationName !== undefined && updateData.organizationName.length < 2) {
+            return res.status(400).json({ message: 'Organization name must be at least 2 chars' });
         }
 
-        const updateData = {
-            organizationName,
-            institutionType,
-            address,
-            branches,
-            academicYears,
-            semesters,
-            subjects,
-            permissions,
-            logoUrl
-        };
+        // Handle nested permissions with dot notation for deep merge
+        if (req.body.permissions) {
+            Object.keys(req.body.permissions).forEach(key => {
+                updateData[`permissions.${key}`] = req.body.permissions[key];
+            });
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: 'No fields provided for update' });
+        }
 
         const updatedOrg = await Organization.findOneAndUpdate(
             { _id: req.organizationId },

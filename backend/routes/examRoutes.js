@@ -60,6 +60,14 @@ router.post("/exams", authenticate, async (req, res) => {
     }
 
     await exam.save();
+
+    // Sync metadata to TeacherProfile
+    const TeacherProfile = require('../models/TeacherProfile');
+    await TeacherProfile.findOneAndUpdate(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      { $addToSet: { examsCreated: exam._id } }
+    );
+
     res.status(201).json({ success: true, message: "Exam created successfully", exam });
   } catch (err) {
     console.error("CREATE EXAM ERROR:", err);
@@ -330,15 +338,38 @@ router.get("/exams/student/:classId", async (req, res) => {
 /* ======================
 PUBLISH / UNPUBLISH
 ====================== */
-router.put("/exams/toggle-publish/:id", async (req, res) => {
+router.put("/exams/toggle-publish/:id", authenticate, async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
     if (!exam) return res.status(404).json({ success: false, message: "Exam not found" });
-    exam.isPublished = !exam.isPublished;
+
+    // Authorization: Only creator or principal
+    const userId = req.userId || (req.user && req.user._id);
+    if (exam.createdBy.toString() !== userId.toString() && req.userRole !== 'principal') {
+      return res.status(403).json({ success: false, message: "Not authorized to publish this exam" });
+    }
+
+    // Toggle logic
+    if (!exam.isPublished) {
+      // Check if questions exist before publishing
+      const questionCount = await Question.countDocuments({ examId: req.params.id });
+      if (questionCount === 0) {
+        return res.status(400).json({ success: false, message: "Cannot publish an exam with no questions. Please add content first." });
+      }
+      exam.isPublished = true;
+      exam.status = 'published';
+    } else {
+      exam.isPublished = false;
+      exam.status = 'draft';
+    }
+    
     await exam.save();
+
     res.json({
       success: true,
-      message: exam.isPublished ? "Exam Published" : "Exam Unpublished",
+      message: exam.isPublished ? "Exam Published Successfully" : "Exam moved to Drafts",
+      isPublished: exam.isPublished,
+      status: exam.status,
       exam
     });
   } catch (err) {
@@ -417,6 +448,14 @@ router.delete("/exams/:id", authenticate, async (req, res) => {
 
     await Exam.findByIdAndDelete(req.params.id);
 
+    // Sync metadata to TeacherProfile
+    const TeacherProfile = require('../models/TeacherProfile');
+    const mongoose = require('mongoose');
+    await TeacherProfile.findOneAndUpdate(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      { $pull: { examsCreated: req.params.id } }
+    );
+
     const Result = require("../models/Result");
     const ProctorLog = require("../models/ProctorLog");
 
@@ -466,6 +505,14 @@ router.post("/exams/clone/:id", authenticate, async (req, res) => {
 
     const newExam = new Exam(cloneData);
     await newExam.save();
+
+    // Sync metadata to TeacherProfile
+    const TeacherProfile = require('../models/TeacherProfile');
+    const mongoose = require('mongoose');
+    await TeacherProfile.findOneAndUpdate(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      { $addToSet: { examsCreated: newExam._id } }
+    );
 
     // Clone questions
     const questions = await Question.find({ examId: req.params.id });

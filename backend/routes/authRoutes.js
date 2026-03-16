@@ -125,8 +125,8 @@ router.post('/signup/principal', async (req, res) => {
       },
       organization: {
         id: organization._id,
-        name: organization.name,
-        type: organization.type,
+        name: organization.organizationName || organization.name,
+        type: organization.institutionType || organization.type,
       },
     });
 
@@ -149,9 +149,35 @@ router.get('/me', authenticate, async (req, res) => {
     }
 
     let additionalInfo = {};
+    let studentExtras = {};
+
     if (user.role === 'teacher') {
       const profile = await TeacherProfile.findOne({ userId: user._id });
       additionalInfo.teacherProfile = profile;
+    }
+
+    // For students: look up enrollment, classId, branch, semester
+    if (user.role === 'student') {
+      const Student = require('../models/Student');
+      const Class = require('../models/Class');
+      const emailParts = user.email.split('@');
+      const enrollment = emailParts[0].toUpperCase();
+
+      const studentProfile = await Student.findOne({
+        $or: [{ enrollmentNo: enrollment }, { userId: user._id }]
+      });
+
+      if (studentProfile) {
+        studentExtras.enrollment = studentProfile.enrollmentNo;
+        studentExtras.branch = studentProfile.branch;
+        studentExtras.semester = studentProfile.currentSemester;
+      }
+
+      // Find classId from Class collection
+      const classDoc = await Class.findOne({
+        'students.enrollment': studentProfile?.enrollmentNo || enrollment
+      });
+      if (classDoc) studentExtras.classId = classDoc._id;
     }
 
     if (user.organizationId) {
@@ -159,9 +185,13 @@ router.get('/me', authenticate, async (req, res) => {
       if (org) {
         additionalInfo.organization = {
           id: org._id,
-          name: org.name,
-          type: org.type,
+          name: org.organizationName || org.name,
+          type: org.institutionType || org.type,
           logo: org.logo,
+          branches: org.branches,
+          semesters: org.semesters,
+          academicYears: org.academicYears,
+          organizationName: org.organizationName
         };
       }
     }
@@ -174,6 +204,7 @@ router.get('/me', authenticate, async (req, res) => {
         email: user.email,
         role: user.role,
         mode: user.mode,
+        ...studentExtras,
       },
       ...additionalInfo,
     });
@@ -221,9 +252,13 @@ router.post('/login', async (req, res) => {
       if (org) {
         additionalInfo.organization = {
           id: org._id,
-          name: org.name,
-          type: org.type,
+          name: org.organizationName || org.name,
+          type: org.institutionType || org.type,
           logo: org.logo,
+          branches: org.branches,
+          semesters: org.semesters,
+          academicYears: org.academicYears,
+          organizationName: org.organizationName
         };
       }
     }

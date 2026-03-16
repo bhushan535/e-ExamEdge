@@ -45,6 +45,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshOrg = async () => {
+    if (!token) return;
+    try {
+      const detailRes = await axios.get('/api/org/details');
+      if (detailRes.data.success) {
+        setOrg(detailRes.data.organization);
+      }
+    } catch (error) {
+      console.error('Failed to refresh organization data:', error);
+    }
+  };
+
   const login = async (email, password) => {
     const res = await axios.post('/api/auth/login', { email, password });
     const { token, user, organization, teacherProfile } = res.data;
@@ -111,6 +123,7 @@ export const AuthProvider = ({ children }) => {
     studentLogin,
     signup,
     logout,
+    refreshOrg,
     isAuthenticated: !!user,
     isTeacher: user?.role === 'teacher',
     isPrincipal: user?.role === 'principal',
