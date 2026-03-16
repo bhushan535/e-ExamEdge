@@ -128,7 +128,7 @@ function Classes() {
           <div className="select-wrapper">
             <FaFilter className="filter-icon" />
             <select value={branch} onChange={(e) => setBranch(e.target.value)}>
-              <option value="">All Branches</option>
+              <option value=""> All Branches</option>
               {org?.branches?.map((b) => (<option key={b} value={b}>{b}</option>))}
             </select>
           </div>

@@ -268,9 +268,11 @@ router.get('/stats', async (req, res) => {
     
     const Class = require('../models/Class');
     const Exam = require('../models/Exam');
+    const Student = require('../models/Student');
+    
     res.json({ success: true, stats: { 
       totalTeachers: organization.teachers.length, 
-      totalStudents: organization.students.length, 
+      totalStudents: await Student.countDocuments({ organizationId: req.organizationId }), 
       totalClasses: await Class.countDocuments({ organizationId: req.organizationId }), 
       totalExams: await Exam.countDocuments({ organizationId: req.organizationId }) 
     }});
