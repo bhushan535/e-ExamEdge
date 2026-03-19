@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import { FaEnvelope, FaLock, FaArrowLeft, FaShieldAlt } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaArrowLeft, FaShieldAlt, FaUserTie, FaUser } from "react-icons/fa";
 import "./TeacherLogin.css";
 
 function TeacherLogin() {
@@ -14,6 +14,7 @@ function TeacherLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mode, setMode] = useState("organization"); // Default to organization for simplicity
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,9 @@ function TeacherLogin() {
     setLoading(true);
     setError("");
     try {
-      await login(email, password, roleParam);
+      // Only teachers need mode disambiguation; principals are always organization
+      const loginMode = roleParam === 'principal' ? 'organization' : mode;
+      await login(email, password, roleParam || 'teacher', loginMode);
       navigate("/TeacherHome");
     } catch (err) {
       setError(err.response?.data?.message || "Authentication failed");
@@ -49,6 +52,26 @@ function TeacherLogin() {
         </div>
 
         <div className="login-form">
+          {roleParam !== 'principal' && (
+            <div className="mode-toggle-login">
+              <div 
+                className={`mode-btn ${mode === 'organization' ? 'active' : ''}`}
+                onClick={() => setMode('organization')}
+                role="button"
+                tabIndex={0}
+              >
+                <FaUserTie style={{ marginRight: '8px' }} /> Organization
+              </div>
+              <div 
+                className={`mode-btn ${mode === 'solo' ? 'active' : ''}`}
+                onClick={() => setMode('solo')}
+                role="button"
+                tabIndex={0}
+              >
+                <FaUser style={{ marginRight: '8px' }} /> Solo Teacher
+              </div>
+            </div>
+          )}
           <div className="input-field-v2">
             <FaEnvelope className="field-icon" />
             <input
@@ -80,7 +103,8 @@ function TeacherLogin() {
         </div>
 
         <div className="login-footer-links">
-          <span>Out of network?</span>
+          <Link to={`/forgot-password?role=${roleParam || 'teacher'}`}>Forgot Password?</Link>
+          <span style={{ margin: "0 10px" }}>|</span>
           <Link to="/signup">Register institution</Link>
         </div>
       </div>

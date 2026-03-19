@@ -91,12 +91,12 @@ router.post('/teacher/add', async (req, res) => {
     const organization = await Organization.findById(req.organizationId);
     if (!organization) return res.status(404).json({ success: false, message: 'Organization context lost' });
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ success: false, message: 'Email already registered' });
+    // Hardened conflict check: Only block if email is already used in Organization Mode
+    const existing = await User.findOne({ email, role: 'teacher', mode: 'organization' });
+    if (existing) return res.status(400).json({ success: false, message: 'This email is already registered as an Organization teacher' });
 
     const teacherUser = new User({
       name, email, password,
-      plaintextPassword: password,
       role: 'teacher', mode: 'organization',
       organizationId: organization._id,
     });
@@ -121,7 +121,7 @@ router.post('/teacher/add', async (req, res) => {
 
 router.get('/teachers', async (req, res) => {
   try {
-    const organization = await Organization.findById(req.organizationId).populate('teachers.userId', 'name email status plaintextPassword');
+    const organization = await Organization.findById(req.organizationId).populate('teachers.userId', 'name email status');
     if (!organization) return res.status(404).json({ success: false, message: 'Registry not found' });
     res.json({ success: true, teachers: organization.teachers });
   } catch (error) {
@@ -154,7 +154,7 @@ router.post('/teacher/reset-password/:teacherId', async (req, res) => {
     }
 
     user.password = newPassword;
-    user.plaintextPassword = newPassword;
+    user.plaintextPassword = ''; // Ensure it's cleared if it existed
     await user.save();
 
     res.json({ success: true, message: "Password reset successfully" });

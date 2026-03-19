@@ -155,7 +155,6 @@ const TeacherManagement = () => {
               <th><FaIdCard /> Name / Employee ID</th>
               <th><FaEnvelope /> Contact Info</th>
               <th><FaBuilding /> Department</th>
-              <th><FaKey /> Password</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -171,9 +170,6 @@ const TeacherManagement = () => {
                 </td>
                 <td>{t.userId?.email}</td>
                 <td>{t.department || <span className="unassigned">General</span>}</td>
-                <td className="password-cell">
-                   <code>{t.userId?.plaintextPassword || '••••••••'}</code>
-                </td>
                 <td>
                   <span className={`status-pill pill-${t.userId?.status}`}>
                     {t.userId?.status}
@@ -237,7 +233,7 @@ const TeacherManagement = () => {
                     />
                   </div>
                   <div className="input-group-v2">
-                    <label>Temporary Password</label>
+                    <label>Access Password</label>
                     <input 
                         type="password" placeholder="••••••••" required 
                         value={newTeacher.password} onChange={e => setNewTeacher({...newTeacher, password: e.target.value})}

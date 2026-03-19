@@ -14,6 +14,8 @@ import StudentClassLogin from "./components/Student-ui/Auth/StudentClassLogin";
 
 /* TEACHER AUTH */
 import TeacherLogin from "./components/Teacher-ui/Auth/TeacherLogin";
+import ForgotPassword from "./components/Teacher-ui/Auth/ForgotPassword";
+import ResetPassword from "./components/Teacher-ui/Auth/ResetPassword";
 
 /* DASHBOARDS */
 import TeacherHome from "./components/Teacher-ui/Dashboard/TeacherHome";
@@ -71,7 +73,8 @@ function App() {
     <Route path="/signup" element={<ModeSelection />} />
     <Route path="/signup/teacher-solo" element={<Registration role="teacher" mode="solo" />} />
     <Route path="/signup/principal" element={<Registration role="principal" mode="organization" />} /> 
-
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password/:token" element={<ResetPassword />} />
     {/* STUDENT AUTH (Legacy/Special) */}
     <Route path="/StudentLogin" element={<StudentLogin />} />
 

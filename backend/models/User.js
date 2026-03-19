@@ -5,17 +5,22 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true,
   },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
+  resetRequestedAt: Date,
+  resetRequestCount: {
+    type: Number,
+    default: 0,
+  },
+  lastResetRequestAt: Date,
+  resetWindowStart: Date,
+  passwordChangedAt: Date,
   password: {
     type: String,
     required: true,
-  },
-  plaintextPassword: {
-    type: String,
-    default: '',
   },
   role: {
     type: String,
@@ -50,6 +55,8 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+userSchema.index({ email: 1, role: 1, mode: 1 }, { unique: true });
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
