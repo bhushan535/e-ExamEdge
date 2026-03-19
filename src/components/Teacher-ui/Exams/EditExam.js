@@ -18,9 +18,10 @@ function EditExam() {
 
   const [form, setForm] = useState({
     examName: "", subject: "", semester: "",
-    examDate: "", startTime: "", endTime: "",
-    totalMarks: "", duration: "", totalQuestions: "",
+    examDate: "", 
+    marksPerQuestion: "", totalMarks: "", duration: "", totalQuestions: "",
     visibility: "private",
+    isPublished: false,
     proctoringConfig: {
       enabled: true,
       autoSubmitLimit: 0,
@@ -64,12 +65,12 @@ function EditExam() {
           subject: exam.subject,
           semester: exam.semester,
           examDate: exam.examDate?.slice(0, 10),
-          startTime: exam.startTime,
-          endTime: exam.endTime,
-          totalMarks: exam.totalMarks,
+          marksPerQuestion: exam.marksPerQuestion || 0,
+          totalMarks: exam.totalMarks || 0,
           duration: exam.duration,
           totalQuestions: exam.totalQuestions,
           visibility: exam.visibility || "private",
+          isPublished: exam.isPublished || false,
           proctoringConfig: exam.proctoringConfig || {
             enabled: true,
             autoSubmitLimit: 0,
@@ -105,8 +106,8 @@ function EditExam() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (form.startTime >= form.endTime && form.startTime && form.endTime) {
-      showToast("Chronological error: End time must follow start time.", "warning");
+    if (!form.examDate || !form.totalQuestions || !form.duration || !form.marksPerQuestion) {
+      showToast("Required fields are missing.", "warning");
       return;
     }
 
@@ -116,7 +117,10 @@ function EditExam() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        totalMarks: Number(form.totalQuestions) * Number(form.marksPerQuestion)
+      }),
     });
 
     if (!res.ok) {
@@ -128,7 +132,7 @@ function EditExam() {
     setTimeout(() => navigate("/Exams"), 1500);
   };
 
-  const isLocked = status === "LIVE" || status === "ENDED";
+  const isLocked = form.isPublished && (status === "LIVE" || status === "ENDED");
 
   return (
     <div className="create-exam-container">
@@ -183,20 +187,10 @@ function EditExam() {
                         <input type="date" name="examDate" min={today} value={form.examDate} onChange={handleChange} disabled={isLocked} />
                     </div>
                 </div>
-                <div className="ce-input-row">
-                    <div className="ce-group">
-                        <label>Start</label>
-                        <input type="time" name="startTime" value={form.startTime} onChange={handleChange} disabled={isLocked} />
-                    </div>
-                    <div className="ce-group">
-                        <label>End</label>
-                        <input type="time" name="endTime" value={form.endTime} onChange={handleChange} disabled={isLocked} />
-                    </div>
-                </div>
                 <div className="ce-input-row three-col">
                     <div className="ce-group">
-                        <label>Points</label>
-                        <input type="number" name="totalMarks" value={form.totalMarks} onChange={handleChange} disabled={isLocked} />
+                        <label>Mark/Que.</label>
+                        <input type="number" name="marksPerQuestion" value={form.marksPerQuestion} onChange={handleChange} disabled={isLocked} />
                     </div>
                     <div className="ce-group">
                         <label>Duration</label>
@@ -207,6 +201,14 @@ function EditExam() {
                         <input type="number" name="totalQuestions" value={form.totalQuestions} onChange={handleChange} disabled={isLocked} />
                     </div>
                 </div>
+
+                <div className="marks-summary-card" style={{ marginTop: '1.5rem', background: 'var(--bg-card)', border: '1px solid var(--glass-border)', padding: '1.2rem', borderRadius: '20px' }}>
+                    <div className="summary-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Current Total Points</div>
+                    <div className="summary-value" style={{ fontSize: '1.8rem', fontWeight: '800', color: 'var(--success-color)' }}>
+                        {(Number(form.totalQuestions) * Number(form.marksPerQuestion)) || 0}
+                    </div>
+                </div>
+
                 <div className="ce-group">
                     <label>Visibility Protocol</label>
                     <div className="ce-select-wrapper">

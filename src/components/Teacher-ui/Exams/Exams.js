@@ -8,6 +8,7 @@ import useToast   from "../../Common/useToast";
 import PopupModal from "../../Common/PopupModal";
 import BackButton from "../../Common/BackButton";
 import { BASE_URL } from '../../../config';
+import * as XLSX from 'xlsx';
 
 function Exams(){
 const { token, user, org } = useAuth();
@@ -18,6 +19,8 @@ const [showCodes,setShowCodes] = useState(false);
 const [codes,setCodes] = useState([]);
 const [filterBranch, setFilterBranch] = useState("");
 const [filterSemester, setFilterSemester] = useState("");
+const [currentExam, setCurrentExam] = useState(null);
+const [statusFilter, setStatusFilter] = useState("ALL"); // "ALL", "AVAILABLE", "DRAFT", "ENDED"
 
 const [deleteModal, setDeleteModal] = useState({ open: false, targetId: null });
 
@@ -148,42 +151,63 @@ const handleClone = async (examId) => {
   }
 };
 
-const generateCodes = async(exam)=>{
-try{
-const res = await fetch(
-`${BASE_URL}/exams/generate-codes/${exam._id}`,
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Authorization": `Bearer ${token}`
-},
-body:JSON.stringify({
-classId:exam.classId
-})
-}
-);
+const fetchGeneratedCodes = async(exam)=>{
+  if (!exam.isPublished) {
+    showToast("Codes are only available for published exams.", "warning");
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${BASE_URL}/exams/${exam._id}/access-codes`, {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
 
-const data = await res.json();
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      showToast(errorData.message || "Failed to fetch codes. Please ensure the server is updated and restarted.", "error");
+      return;
+    }
 
-if(Array.isArray(data)){
-setCodes(data);
-}
-else{
-setCodes([]);
-}
-setShowCodes(true);
-
-}
-catch(err){
-console.error(err);
-setCodes([]);
-showToast("Failed to generate security codes", "error");
-}
-
+    const data = await res.json();
+    if (data.success && Array.isArray(data.codes)) {
+      setCodes(data.codes);
+      setCurrentExam(exam); // Store for filename
+      setShowCodes(true);
+    } else {
+      setCodes([]);
+      showToast(data.message || "No codes found for this exam.", "warning");
+    }
+  } catch (err) {
+    console.error(err);
+    setCodes([]);
+    showToast("Network error or server update required. Please restart your backend.", "error");
+  }
 };
 
-const uniqueBranches = [...new Set(exams.map(e => e.branch).filter(Boolean))].sort();
+const handleExportExcel = () => {
+    if (!codes || codes.length === 0) return;
+    
+    // Prepare data
+    const exportData = codes.map(c => ({
+        "Roll No": c.rollNo || "N/A",
+        "Student Name": c.studentName,
+        "Enrollment ID": c.studentId,
+        "Login Password": c.password || "N/A",
+        "Exam Access Code": c.code || c.accessCode
+    }));
+
+    // Create Worksheet
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Access Codes");
+
+    // Filename
+    const fileName = `AccessCodes_${currentExam?.subjectName || 'Exam'}_${new Date().toLocaleDateString()}.xlsx`;
+    
+    // Download
+    XLSX.writeFile(wb, fileName);
+};
 const uniqueSemesters = [...new Set(exams.map(e => String(e.semester)).filter(Boolean))].sort((a,b)=> Number(a) - Number(b));
 
 const filteredExams = exams.filter((exam) => {
@@ -192,18 +216,21 @@ const filteredExams = exams.filter((exam) => {
   const matchesBranch = filterBranch === "" || exam.branch === filterBranch;
   const matchesSem = filterSemester === "" || String(exam.semester) === filterSemester;
   
+  const status = getStatus(exam);
+  const matchesStatus = statusFilter === "ALL" || status === statusFilter;
+
   // Robust ID comparison function
   const isOwner = (exam.createdBy === (user?._id || user?.id)) || 
                   (exam.teacherId === (user?._id || user?.id));
 
   if (user?.mode === 'solo') {
-    return matchesSearch && matchesBranch && matchesSem;
+    return matchesSearch && matchesBranch && matchesSem && matchesStatus;
   }
 
   if (activeTab === "my") {
-    return matchesSearch && matchesBranch && matchesSem && isOwner;
+    return matchesSearch && matchesBranch && matchesSem && matchesStatus && isOwner;
   } else {
-    return matchesSearch && matchesBranch && matchesSem && !isOwner && exam.visibility === 'organization';
+    return matchesSearch && matchesBranch && matchesSem && matchesStatus && !isOwner && exam.visibility === 'organization';
   }
 });
 
@@ -254,10 +281,10 @@ return(
 
             <div className="tag-filters">
                 <h5>Filter by Status</h5>
-                <button className={search === "" ? "active" : ""} onClick={()=>setSearch("")}>All Assessments</button>
-                <button className={search === "AVAILABLE" ? "active" : ""} onClick={()=>setSearch("AVAILABLE")}>Live Now</button>
-                <button className={search === "DRAFT" ? "active" : ""} onClick={()=>setSearch("DRAFT")}>Drafts Only</button>
-                <button className={search === "ENDED" ? "active" : ""} onClick={()=>setSearch("ENDED")}>Past Exams</button>
+                <button className={statusFilter === "ALL" ? "active" : ""} onClick={()=>setStatusFilter("ALL")}>All Assessments</button>
+                <button className={statusFilter === "AVAILABLE" ? "active" : ""} onClick={()=>setStatusFilter("AVAILABLE")}>Live Now</button>
+                <button className={statusFilter === "DRAFT" ? "active" : ""} onClick={()=>setStatusFilter("DRAFT")}>Drafts Only</button>
+                <button className={statusFilter === "ENDED" ? "active" : ""} onClick={()=>setStatusFilter("ENDED")}>Past Exams</button>
             </div>
         </aside>
 
@@ -354,7 +381,7 @@ return(
                                                 <button className={`btn-publish ${exam.isPublished ? 'unpublish' : 'publish'}`} onClick={() => togglePublish(exam)}>
                                                     {exam.isPublished ? "Unpublish" : "Publish"}
                                                 </button>
-                                                <button className="btn-secondary" onClick={() => generateCodes(exam)}>Codes</button>
+                                                <button className="btn-secondary" onClick={() => fetchGeneratedCodes(exam)}>Codes</button>
                                             </div>
                                             <div className="action-row icon-actions">
                                                 <div className="group">
@@ -402,22 +429,29 @@ return(
         <div className="code-overlay">
             <div className="code-modal">
                 <div className="modal-header">
-                   <h3>Student Security Codes</h3>
+                   <h2>Exam Access Codes</h2>
+                   <button className="btn-secondary excel-btn" onClick={handleExportExcel} style={{marginRight: 'auto', marginLeft: '20px'}}>
+                       Export to Excel
+                   </button>
                    <button className="close-btn" onClick={()=>setShowCodes(false)}>&times;</button>
                 </div>
                 <div className="table-wrapper">
                     <table>
                         <thead>
                             <tr>
+                                <th>Roll No</th>
                                 <th>Student Name</th>
+                                <th>Login Password</th>
                                 <th>Access Code</th>
                             </tr>
                         </thead>
                         <tbody>
                             {Array.isArray(codes) && codes.map((c,index)=>(
                                 <tr key={index}>
+                                    <td>{c.rollNo || "N/A"}</td>
                                     <td>{c.studentName}</td>
-                                    <td className="code-cell"><code>{c.code}</code></td>
+                                    <td><code style={{color: 'var(--accent-color)'}}>{c.password || "N/A"}</code></td>
+                                    <td className="code-cell"><code>{c.code || c.accessCode}</code></td>
                                 </tr>
                             ))}
                         </tbody>

@@ -9,7 +9,33 @@ const Question = require("../models/Question");
 const Subject = require("../models/Subject");
 const { authenticate } = require('../middleware/auth');
 
-// 1. Specific named POST routes first
+/* ======================
+UTILITY: CODE GENERATOR (INTERNAL)
+====================== */
+const generateExamAccessCodes = async (examId, classId) => {
+    const classData = await Class.findById(classId);
+    if (!classData) return [];
+
+    const students = classData.students;
+    if (!students.length) return [];
+
+    // Clear old codes first
+    await ExamAccess.deleteMany({ examId });
+
+    const codes = [];
+    for (const student of students) {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const access = new ExamAccess({
+        examId, 
+        studentId: student.enrollment, 
+        accessCode: code, 
+        used: false
+      });
+      await access.save();
+      codes.push({ studentName: student.name, studentId: student.enrollment, code });
+    }
+    return codes;
+};
 
 /* ======================
 CREATE EXAM
@@ -109,15 +135,7 @@ router.post("/exams/generate-codes/:examId", async (req, res) => {
 
     await ExamAccess.deleteMany({ examId });
 
-    const codes = [];
-    for (const student of students) {
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const access = new ExamAccess({
-        examId, studentId: student.enrollment, accessCode: code, used: false
-      });
-      await access.save();
-      codes.push({ studentName: student.name, studentId: student.enrollment, code });
-    }
+    const codes = await generateExamAccessCodes(examId, classId);
     res.json(codes);
   } catch (err) {
     console.error("GENERATE CODES ERROR:", err);
@@ -352,6 +370,39 @@ router.get("/exams/student/:classId", async (req, res) => {
 });
 
 /* ======================
+GET SAVED ACCESS CODES
+====================== */
+router.get("/exams/:id/access-codes", authenticate, async (req, res) => {
+  try {
+    const examId = req.params.id;
+    const codes = await ExamAccess.find({ examId });
+    
+    // Fetch student names from Class to match current IDs
+    const exam = await Exam.findById(examId);
+    if (!exam) return res.status(404).json({ success: false, message: "Exam not found" });
+
+    const classData = await Class.findById(exam.classId);
+    if (!classData) return res.status(404).json({ success: false, message: "Class not found" });
+
+    const formattedCodes = codes.map(c => {
+      const student = classData.students.find(s => s.enrollment === c.studentId);
+      return {
+        studentName: student ? student.name : "Unknown",
+        studentId: c.studentId,
+        rollNo: student ? student.rollNo : "N/A",
+        password: student ? student.password : "N/A",
+        code: c.accessCode
+      };
+    });
+
+    res.json({ success: true, codes: formattedCodes });
+  } catch (err) {
+    console.error("FETCH CODES ERROR:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/* ======================
 GET TEACHER SUBJECTS (Solo Mode)
 ====================== */
 router.get("/teacher/subjects", authenticate, async (req, res) => {
@@ -390,9 +441,13 @@ router.put("/exams/toggle-publish/:id", authenticate, async (req, res) => {
       }
       exam.isPublished = true;
       exam.status = 'published';
+      // Generate codes ON PUBLISH
+      await generateExamAccessCodes(exam._id, exam.classId);
     } else {
       exam.isPublished = false;
       exam.status = 'draft';
+      // Delete codes ON UNPUBLISH
+      await ExamAccess.deleteMany({ examId: exam._id });
     }
     
     await exam.save();
