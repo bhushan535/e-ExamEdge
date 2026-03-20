@@ -17,8 +17,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .mode-hero {
@@ -213,6 +220,7 @@
   .mode-cards-premium {
     grid-template-columns: 1fr;
   }
+
   .mode-hero h1 {
     font-size: 2.5rem;
   }
@@ -229,7 +237,7 @@
   background: #ffffff;
   color: #000000;
   border: 1px solid rgba(0, 0, 0, 0.2);
-  box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme='light'] .mode-hero h1 {
@@ -297,7 +305,7 @@
 [data-theme='light'] .mode-bottom-cta {
   background: #ffffff;
   border: 1px dashed #cbd5e1;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
 }
 
 [data-theme='light'] .mode-bottom-cta p {
@@ -311,4 +319,11 @@
 [data-theme='light'] .mode-login-btn:hover {
   filter: none;
   color: #333333;
+}
+
+[data-theme='light'] .mode-primary-btn:hover {
+  background: #000000 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2) !important;
 }

@@ -216,7 +216,7 @@
    LIGHT MODE AESTHETIC OVERRIDES (Auth Forms)
    ============================================================ */
 [data-theme='light'] .login-wrapper {
-    background: var(--bg-dark);
+    background: transparent;
 }
 
 /* Redundant light mode overlays removed */
@@ -312,27 +312,49 @@
 
 [data-theme='light'] .login-submit-v2,
 [data-theme='light'] .login-submit-v2.student {
-    background: linear-gradient(180deg, #3f3f46 0%, #000000 100%);
-    color: #ffffff;
-    border: 1px solid #000000;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    -webkit-text-fill-color: #ffffff;
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #000000 !important;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1) !important;
+    -webkit-text-fill-color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 1.1rem !important;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 
 [data-theme='light'] .login-submit-v2:hover,
 [data-theme='light'] .login-submit-v2.student:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    transform: translate(-1px, -1px) !important;
+    box-shadow: 6px 6px 0px rgba(0,0,0,0.15) !important;
+}
+
+[data-theme='light'] .login-submit-v2:active,
+[data-theme='light'] .login-submit-v2.student:active {
+    transform: translate(3px, 3px) !important;
+    box-shadow: 0px 0px 0px #000000 !important;
+}
+
+[data-theme='light'] .login-submit-v2:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background: #475569 !important;
+    color: #cbd5e1 !important;
+    -webkit-text-fill-color: #cbd5e1 !important;
 }
 
 [data-theme='light'] .login-footer-links {
     color: #475569;
+    font-weight: 600;
 }
 
 [data-theme='light'] .login-footer-links a {
     color: #000000;
+    text-decoration: underline;
 }
 
 [data-theme='light'] .login-footer-links a:hover {
-    text-decoration: underline;
+    color: #4f46e5;
 }

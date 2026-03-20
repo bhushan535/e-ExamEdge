@@ -162,7 +162,8 @@
 }
 
 .cc-input-wrapper input, 
-.cc-input-wrapper select {
+.cc-input-wrapper select,
+.cc-textarea-premium {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 1.1rem 1.5rem;
@@ -171,6 +172,7 @@
     font-size: 1rem;
     transition: all 0.3s;
     outline: none;
+    width: 100%;
 }
 
 .cc-input-wrapper input:focus, 
@@ -329,4 +331,11 @@
 [data-theme='light'] .cc-launch-btn {
     /* Already handled by index.css but ensuring premium neobrutalist look */
     border: 3px solid #000000 !important;
+}
+
+[data-theme='light'] .cc-launch-btn:hover {
+    background: #000000 !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.2) !important;
 }

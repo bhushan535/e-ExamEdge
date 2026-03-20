@@ -4,7 +4,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px 20px;
+  padding: 20px;
   font-family: var(--font-primary);
   transition: background 0.3s ease;
 }
@@ -28,13 +28,13 @@
 .header-gradient {
   background: var(--primary-gradient);
   color: white;
-  padding: 40px;
+  padding: 24px 32px;
   text-align: center;
 }
 
 .header-gradient h2 {
-  margin: 0 0 12px 0;
-  font-size: 30px;
+  margin: 0 0 8px 0;
+  font-size: 24px;
   font-weight: 900;
   letter-spacing: -0.5px;
 }
@@ -54,10 +54,10 @@
 }
 
 .instruction-body {
-  padding: 40px;
+  padding: 24px 32px;
   display: flex;
   flex-direction: column;
-  gap: 35px;
+  gap: 24px;
 }
 
 .rules-section h3 {
@@ -72,12 +72,12 @@
 
 .instruction-list {
   background: var(--bg-dark);
-  padding: 30px 30px 30px 50px;
-  border-radius: 16px;
+  padding: 18px 20px 18px 40px;
+  border-radius: 12px;
   border: 1px solid var(--glass-border);
   margin: 0;
   color: var(--text-muted);
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
 .instruction-list li {
@@ -93,10 +93,10 @@
 .action-section {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 20px;
   background: var(--bg-card);
-  padding: 30px;
-  border-radius: 20px;
+  padding: 20px 24px;
+  border-radius: 16px;
   border: 1px dashed var(--glass-border);
 }
 
@@ -115,12 +115,12 @@
 }
 
 .code-input-group input {
-  padding: 16px 20px;
-  font-size: 20px;
+  padding: 12px 16px;
+  font-size: 18px;
   background: var(--bg-dark);
   border: 1px solid var(--glass-border);
   color: var(--text-main);
-  border-radius: 12px;
+  border-radius: 10px;
   transition: var(--transition-smooth);
   letter-spacing: 3px;
   font-family: inherit;
@@ -213,10 +213,10 @@
   background-color: var(--success-color);
   color: white;
   border: none;
-  padding: 18px;
-  font-size: 18px;
+  padding: 14px;
+  font-size: 16px;
   font-weight: 800;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
   transition: var(--transition-smooth);
   width: 100%;
@@ -239,50 +239,58 @@
 /* ── Light Theme Neobrutalist Overrides ── */
 [data-theme='light'] .instruction-card {
     background: #ffffff;
-    border: 3px solid #000000;
-    box-shadow: 12px 12px 0px #000000;
-    border-radius: 28px;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
 }
 
 [data-theme='light'] .header-gradient {
-    background: #000000;
-    border-bottom: 3px solid #000000;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-bottom: 1.5px solid rgba(0, 0, 0, 0.1);
+    color: #ffffff;
+}
+
+[data-theme='light'] .header-gradient h2,
+[data-theme='light'] .header-gradient .exam-meta {
+    color: #ffffff;
 }
 
 [data-theme='light'] .instruction-list {
-    background: #ffffff;
-    border: 3px solid #000000;
-    color: #1f2937;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    color: #334155;
 }
-[data-theme='light'] .instruction-list li b { color: #000000; }
+[data-theme='light'] .instruction-list li b { color: #1e1b4b; }
 
 [data-theme='light'] .action-section {
     background: #ffffff;
-    border: 3px solid #000000;
+    border: 1.5px solid #e2e8f0;
 }
 
 [data-theme='light'] .code-input-group input {
-    background: #ffffff;
-    border: 3px solid #000000;
-    color: #000000;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    color: #1e1b4b;
 }
 [data-theme='light'] .code-input-group input:focus {
-    box-shadow: 4px 4px 0px #000000;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 [data-theme='light'] .checkmark {
     background: #ffffff;
-    border: 3px solid #000000;
+    border: 1.5px solid #4f46e5;
 }
 
 [data-theme='light'] .start-btn {
-    border: 3px solid #000000;
-    box-shadow: 6px 6px 0px #000000;
+    border: none;
+    background: #10b981;
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.25);
     color: #ffffff;
 }
 [data-theme='light'] .start-btn:active:not(.disabled) {
-    transform: translate(2px, 2px);
-    box-shadow: 3px 3px 0px #000000;
+    transform: translate(1px, 1px);
+    box-shadow: 1.5px 1.5px 0px #000000;
 }
 
 [data-theme='light'] .rules-section h3 { color: #000000; font-weight: 900; }

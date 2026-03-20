@@ -26,20 +26,6 @@ const SoloClassView = ({
                     <p className="vc-subtitle">{cls.branch}</p>
                 </div>
 
-                <div className="vc-link-card prominent">
-                    <div className="link-header">
-                        <FaLink /> <span>Share this link with your students</span>
-                    </div>
-                    <div className="link-input-group">
-                        <input value={joinLink} readOnly />
-                        <button className="copy-btn" onClick={() => {
-                            navigator.clipboard.writeText(joinLink);
-                            showToast("Link copied!", "success");
-                        }}><FaCopy /></button>
-                    </div>
-                    <p className="link-hint">Students can join instantly using this URL.</p>
-                </div>
-
                 <div className="vc-info-grid simplified">
                     <div className="vc-info-item">
                         <label><FaLayerGroup /> Topic</label>

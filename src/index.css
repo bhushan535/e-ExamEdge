@@ -2,7 +2,7 @@
   /* Color Palette - Premium & Modern Dark Theme */
   --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
   --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
-  --bg-dark: #04040c;
+  --bg-dark: #0a0a0c;
   --bg-card: rgba(255, 255, 255, 0.03);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -24,20 +24,20 @@
 /* Light Mode Overrides */
 [data-theme='light'] {
   color-scheme: light;
-  --bg-dark: #fff9dc;
-  --bg-card: #fafafa;
+  --bg-dark: #fbfbfc; /* Clean, professional off-white */
+  --bg-card: #ffffff;
   --text-main: #171717;
-  --text-muted: #475569;
-  --glass-bg: #ffffff;
-  --glass-border: #e5e7eb;
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  --text-muted: #64748b;
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 12px rgba(99, 102, 241, 0.08);
   --dropdown-bg: #ffffff;
-  --dropdown-border: #e5e7eb;
-  --dropdown-accent-glow: rgba(0, 0, 0, 0.05);
+  --dropdown-border: #e2e8f0;
+  --dropdown-accent-glow: rgba(99, 102, 241, 0.05);
 
-  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
-  --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-  --primary-color: #6366f1;
+  --primary-gradient: #000000;
+  --secondary-gradient: #1e293b;
+  --primary-color: #000000;
   --accent-color: #f43f5e;
 }
 
@@ -46,12 +46,11 @@
 [data-theme='light'] h2,
 [data-theme='light'] h3,
 [data-theme='light'] h4 {
-  color: #000000;
-  font-weight: 900;
+  color: #171717;
+  font-weight: 800;
 }
 
-/* Thick black borders on featured content cards/frames */
-/* Slightly offset layered border/shadow look on cards */
+/* Soft Neobrutalist Component Style */
 [data-theme='light'] .glass-v2,
 [data-theme='light'] .card,
 [data-theme='light'] .stat-card,
@@ -79,28 +78,38 @@
 [data-theme='light'] .pagination-modern button,
 [data-theme='light'] .premium-summary,
 [data-theme='light'] .solo-redesign .premium-input {
-  border: 3px solid #000000 !important;
-  box-shadow: 6px 6px 0px #000000 !important;
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px rgba(0, 0, 0, 0.05) !important;
   background: #ffffff !important;
-  border-radius: 20px;
-  color: #000000 !important;
+  border-radius: 16px;
+  color: #171717 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Soft hover for cards */
+[data-theme='light'] .card:hover,
+[data-theme='light'] .hero-stat-card:hover,
+[data-theme='light'] .action-tile:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.15) !important;
+  border-color: #4f46e5 !important;
 }
 
 /* Neobrutalist Button Style for Light Mode */
-[data-theme='light'] button:not(.theme-toggle-btn):not(.tag-del-btn):not(.del-btn-mini),
+[data-theme='light'] button:not(.theme-toggle-btn):not(.tag-del-btn):not(.del-btn-mini):not(.palette-btn):not(.nav-btn):not(.submit-exam-btn):not(.review-toggle):not(.cc-proceed-btn):not(.start-btn),
 [data-theme='light'] .ce-submit-btn,
 [data-theme='light'] .btn,
 [data-theme='light'] .mode-primary-btn,
 [data-theme='light'] .btn-icon,
 [data-theme='light'] .mini-action-btn {
-  background: #ffffff !important;
-  color: #171717 !important;
-  -webkit-text-fill-color: #171717 !important;
-  border-radius: 9999px !important;
-  border: 2px solid #000000 !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-  font-weight: 800 !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: #ffffff;
+  color: #000000;
+  border-radius: 10px;
+  border: 1.5px solid #000000;
+  box-shadow: 2.5px 2.5px 0px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+  padding: 0.6rem 1.25rem;
+  transition: all 0.2s ease;
 }
 
 [data-theme='light'] button:not(.theme-toggle-btn):hover,
@@ -108,22 +117,36 @@
 [data-theme='light'] .mode-primary-btn:hover,
 [data-theme='light'] .btn-icon:hover,
 [data-theme='light'] .mini-action-btn:hover {
-  background: #000000 !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  transform: translate(-2px, -2px) !important;
-  box-shadow: 6px 6px 0px #000000 !important;
+  background: #f1f5f9;
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px #000000;
 }
 
-/* Ensure SVGs inside buttons follow text color */
+/* Failsafe SVG and Path targeting for Light Mode */
+[data-theme='light'] svg,
+[data-theme='light'] .btn-icon svg,
 [data-theme='light'] button svg {
-  color: inherit !important;
-  fill: currentColor !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 1.25em !important;
+  height: 1.25em !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
 }
 
-/* Icons should follow component colors instead of forced black */
-[data-theme='light'] .icon-primary {
-  color: var(--primary-color);
+[data-theme='light'] svg path,
+[data-theme='light'] button svg path,
+[data-theme='light'] .btn-icon svg path {
+  fill: currentColor !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+[data-theme='light'] .btn-icon svg,
+[data-theme='light'] .btn-icon svg path {
+  color: #000000 !important;
+  fill: #000000 !important;
 }
 
 /* Thin gray outlines for input/address/social containers */
@@ -225,9 +248,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-dark);
   background-image: 
-    radial-gradient(circle at 70% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 60%),
-    radial-gradient(circle at 15% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 55%),
-    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 70%);
+    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(79, 70, 229, 0.1) 0%, transparent 40%);
   background-attachment: fixed;
   color: var(--text-main);
   line-height: 1.5;
@@ -237,11 +259,16 @@ body {
 }
 
 [data-theme='light'] body {
+  background-color: #fcece8; /* Base soft peach */
   background-image: 
-    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 1) 0%, transparent 70%),
-    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.8) 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
-    radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.5) 0%, transparent 60%);
+    radial-gradient(at 0% 0%, rgba(255, 179, 167, 0.4) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(255, 249, 196, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(224, 242, 241, 0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(128, 222, 234, 0.3) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(255, 224, 211, 0.4) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(255, 253, 231, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(178, 235, 242, 0.3) 0px, transparent 50%);
+  background-attachment: fixed;
 }
 
 code {

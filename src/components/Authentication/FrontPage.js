@@ -1,16 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FaUserGraduate, FaChalkboardTeacher, FaUniversity, FaArrowRight, FaShieldAlt } from 'react-icons/fa';
+import { FaUserGraduate, FaChalkboardTeacher, FaUniversity, FaArrowRight } from 'react-icons/fa';
 import "./FrontPage.css";
+import logo from "../../logo.svg";
 
 function FrontPage() {
     return (
         <div className="front-wrapper">
-            <div className="geometric-bg"></div>
             
             <header className="main-nav">
                 <div className="nav-logo">
-                    <FaShieldAlt className="shield-logo" />
+                    <img src={logo} alt="SecureExam Logo" className="shield-logo" style={{ width: '85px', height: '85px', objectFit: 'contain' }} />
                     <span>SecureExam <small>Pro</small></span>
                 </div>
                 <div className="nav-links">

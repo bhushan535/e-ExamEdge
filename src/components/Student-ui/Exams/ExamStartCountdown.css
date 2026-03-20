@@ -11,8 +11,8 @@
 
 .countdown-card {
   background: var(--bg-card);
-  padding: 60px 50px;
-  border-radius: 32px;
+  padding: 32px 40px;
+  border-radius: 24px;
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-xl);
   text-align: center;
@@ -29,23 +29,23 @@
 .countdown-card h2 {
   margin: 0;
   color: var(--text-main);
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 900;
   letter-spacing: -1px;
 }
 
 .countdown-sub {
   color: var(--text-muted);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
-  margin: 12px 0 45px 0;
+  margin: 8px 0 32px 0;
 }
 
 .countdown-circle-container {
   position: relative;
-  width: 200px;
-  height: 200px;
-  margin: 0 auto 45px auto;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 32px auto;
 }
 
 .countdown-svg {
@@ -74,7 +74,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 72px;
+  font-size: 64px;
   font-weight: 900;
   color: var(--text-main);
   line-height: 1;
@@ -94,9 +94,9 @@
 /* ── Light Theme Neobrutalist Overrides ── */
 [data-theme='light'] .countdown-card {
     background: #ffffff;
-    border: 4px solid #000000;
-    box-shadow: 15px 15px 0px #000000;
-    border-radius: 36px;
+    border: 1.5px solid #000000;
+    box-shadow: 4px 4px 0px #000000;
+    border-radius: 28px;
 }
 
 [data-theme='light'] .countdown-card h2 { color: #000000; }
@@ -105,11 +105,12 @@
 [data-theme='light'] .countdown-number { color: #000000; }
 
 [data-theme='light'] .bg-circle { stroke: #f1f5f9; }
-[data-theme='light'] .progress-circle { stroke: #000000; stroke-width: 12; }
+[data-theme='light'] .progress-circle { stroke: #000000; stroke-width: 10; }
 
 [data-theme='light'] .warning-box {
     background-color: #ffffff;
-    border: 3px solid #000000;
+    border: 1.5px solid #000000;
     color: #000000;
-    box-shadow: 4px 4px 0px #000000;
-}
+    box-shadow: 2px 2px 0px #000000;
+}
+

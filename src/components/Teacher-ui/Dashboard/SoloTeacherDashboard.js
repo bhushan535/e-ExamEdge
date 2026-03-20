@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import { BASE_URL } from '../../../config';
 import "./SoloTeacherDashboard.css";
+import logo from "../../../logo.svg";
 
 const SoloTeacherDashboard = ({ user, token, logout }) => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const SoloTeacherDashboard = ({ user, token, logout }) => {
   const [classes, setClasses] = useState([]);
   const [exams, setExams] = useState([]);
 
-  const appLogo = "/logo192.png"; 
+  const appLogo = logo; 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,8 +91,8 @@ const SoloTeacherDashboard = ({ user, token, logout }) => {
       {/* Sidebar / Navigation Rail */}
       <div className="solo-side-nav">
         <div className="nav-logo-section">
-          <img src={appLogo} alt="Logo" className="solo-app-logo" />
-          <span className="solo-app-name">Antigravity AI</span>
+          <img src={appLogo} alt="Logo" className="solo-app-logo" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
+          <span className="solo-app-name">SecureExam Pro</span>
         </div>
         
         <nav className="solo-nav-items">

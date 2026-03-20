@@ -159,7 +159,7 @@ function CreateClass() {
                       placeholder="Briefly describe what this class is about..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      rows={2}
+                      rows={5}
                       className="cc-textarea-premium"
                     />
                   </div>

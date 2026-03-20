@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { defaultConfig } from "./config/defaultConfig";
-import FaceDetector from "./face/FaceDetector";
-import HeadPoseDetector from "./head/HeadPoseDetector";
-import GazeDetector from "./gaze/GazeDetector";
+import AIProctoringDetector from "./AIProctoringDetector";
 import ProctoringOverlay from "./ui/ProctoringOverlay";
 import { captureFrame } from "./utils/captureFrame";
 import { evaluateFaceRules } from "./rules/faceRules";
@@ -194,20 +192,13 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
 
   return (
     <>
-      <FaceDetector onFaceStatus={handleFaceStatus} videoRef={videoRef} />
-
-
-      {/* <HeadPoseDetector videoRef={videoRef} onPose={handleHeadPose} config={mergedConfig} />
-      {false && (
-        <GazeDetector videoRef={videoRef} onGaze={handleGaze} config={mergedConfig} />
-      )} */}
-
-      {false && (
-        <HeadPoseDetector videoRef={videoRef} onPose={handleHeadPose} config={mergedConfig} />
-      )}
-      {false && (
-        <GazeDetector videoRef={videoRef} onGaze={handleGaze} config={mergedConfig} />
-      )}
+      <AIProctoringDetector 
+        videoRef={videoRef} 
+        onFaceStatus={handleFaceStatus}
+        onPose={handleHeadPose} 
+        onGaze={handleGaze} 
+        config={mergedConfig} 
+      />
 
       <ProctoringOverlay
         videoRef={videoRef}

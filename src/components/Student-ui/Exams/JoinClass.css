@@ -7,8 +7,8 @@
 }
 
 .jc-card {
-  background: white; border-radius: 20px;
-  padding: 38px 34px; width: 100%; max-width: 450px;
+  background: white; border-radius: 16px;
+  padding: 28px 24px; width: 100%; max-width: 450px;
   box-shadow: 0 24px 60px rgba(0,0,0,0.2);
 }
 
@@ -55,10 +55,10 @@
 }
 
 .jc-btn {
-  width: 100%; padding: 14px;
+  width: 100%; padding: 12px;
   background: #1e3a5f; color: white;
-  border: none; border-radius: 10px;
-  font-size: 16px; font-weight: 700;
+  border: none; border-radius: 8px;
+  font-size: 15px; font-weight: 700;
   cursor: pointer; margin-top: 4px;
   transition: background 0.2s;
 }

@@ -1,6 +1,6 @@
 .front-wrapper {
     min-height: 100vh;
-    background: #0a0a0c;
+    background: transparent;
     color: #ffffff;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     position: relative;
@@ -9,18 +9,6 @@
     flex-direction: column;
 }
 
-.geometric-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    background: 
-        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(79, 70, 229, 0.1) 0%, transparent 40%);
-    pointer-events: none;
-}
 
 .main-nav {
     position: relative;
@@ -251,91 +239,85 @@
    LIGHT MODE AESTHETIC OVERRIDES (Front Page)
    ============================================================ */
 [data-theme='light'] .front-wrapper {
-    background: #e2e8f0; 
-    background-image: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
-    color: #171717;
+    background: transparent; 
+    color: #1e293b;
 }
 
-/* Elegant illuminated glow effect for the background (Monochrome) */
 [data-theme='light'] .geometric-bg {
-    background: 
-        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 1) 0%, transparent 50%),
-        radial-gradient(circle at 85% 80%, rgba(255, 255, 255, 0.6) 0%, transparent 55%),
-        radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.8) 0%, transparent 60%);
-    opacity: 1;
-}
-
-/* Add text shadow to hero title for better pop */
-[data-theme='light'] .hero-title,
-[data-theme='light'] .hero-title span {
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    background: transparent;
+    opacity: 0.8;
 }
 
 /* Navigation */
 [data-theme='light'] .main-nav {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    background: rgba(255, 255, 255, 0.8);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
 }
-[data-theme='light'] .nav-logo { color: #000000; }
+
+[data-theme='light'] .nav-logo { color: #1e1b4b; }
 [data-theme='light'] .nav-logo small {
-    background: #000000;
+    background: #4f46e5;
     color: #ffffff;
 }
-[data-theme='light'] .shield-logo { color: #000000; }
+[data-theme='light'] .shield-logo { color: #4f46e5; }
 
 [data-theme='light'] .nav-btn.primary {
-    background: linear-gradient(180deg, #3f3f46 0%, #000000 100%);
+    background: #4f46e5;
     color: #ffffff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    border: 1px solid #000000;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2);
+    border: none;
 }
 [data-theme='light'] .nav-btn.primary:hover {
-    background: #000000;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+    background: #4338ca;
+    box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.3);
 }
 
 /* Hero Section */
 [data-theme='light'] .hero-title,
 [data-theme='light'] .hero-title span {
-    color: #000000;
-    -webkit-text-fill-color: #000000;
-    background: none;
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
 }
-[data-theme='light'] .hero-subtitle { color: #475569; }
+
+[data-theme='light'] .hero-subtitle { color: #64748b; }
+
 [data-theme='light'] .hero-badge {
     background: #ffffff;
-    color: #000000;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+    color: #4f46e5;
+    border: 1.5px solid #e0e7ff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* Glass Cards -> Monochrome structured */
+/* Cards -> Soft Premium Look */
 [data-theme='light'] .glass-card {
     background: #ffffff;
-    border: 3px solid #000000;
-    box-shadow: 5px 5px 0px #000000;
-    border-radius: 20px;
+    border: 1.5px solid #f1f5f9;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    border-radius: 28px;
 }
-[data-theme='light'] .glass-card:hover {
-    border-color: #000000;
-    transform: translateY(-4px) !important;
-    box-shadow: 8px 8px 0px #000000;
-    background: #fafafa;
-}
-[data-theme='light'] .glass-card h3 { color: #000000; }
-[data-theme='light'] .glass-card p { color: #475569; }
-[data-theme='light'] .card-footer { color: #000000; }
 
-/* Adjust card icons to monochrome */
+[data-theme='light'] .glass-card:hover {
+    border-color: #e0e7ff;
+    transform: translateY(-8px) !important;
+    box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.1);
+    background: #ffffff;
+}
+
+[data-theme='light'] .glass-card h3 { color: #1e293b; }
+[data-theme='light'] .glass-card p { color: #64748b; }
+[data-theme='light'] .card-footer { color: #4f46e5; }
+
 [data-theme='light'] .card-icon.student,
 [data-theme='light'] .card-icon.teacher,
 [data-theme='light'] .card-icon.org {
-    background: #f1f5f9;
-    color: #000000;
-    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #4f46e5;
+    border: 1.5px solid #f1f5f9;
 }
 
-/* Footer CTA */
-[data-theme='light'] .front-footer-cta p { color: #475569; }
-[data-theme='light'] .cta-link { color: #000000; }
-[data-theme='light'] .cta-link:hover { color: #333333; }
+[data-theme='light'] .cta-link { color: #4f46e5; }
+[data-theme='light'] .cta-link:hover { color: #1e1b4b; }

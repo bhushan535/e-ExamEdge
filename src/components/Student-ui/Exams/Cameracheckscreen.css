@@ -7,7 +7,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 40px 20px;
+    padding: 24px 20px;
     font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -30,7 +30,7 @@
 .camera-check-header {
     background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
     color: white;
-    padding: 35px 40px;
+    padding: 24px 28px;
     text-align: center;
 }
 
@@ -40,8 +40,8 @@
 }
 
 .camera-check-header h2 {
-    margin: 0 0 10px 0;
-    font-size: 26px;
+    margin: 0 0 6px 0;
+    font-size: 22px;
     font-weight: 700;
     letter-spacing: 0.5px;
 }
@@ -58,10 +58,10 @@
    BODY
 =============================== */
 .camera-check-body {
-    padding: 35px 40px;
+    padding: 24px 28px;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 20px;
 }
 
 /* ===============================
@@ -367,8 +367,8 @@
 =============================== */
 .cc-proceed-btn {
     width: 100%;
-    padding: 16px;
-    font-size: 18px;
+    padding: 14px;
+    font-size: 16px;
     font-weight: 600;
     border: none;
     border-radius: 10px;
