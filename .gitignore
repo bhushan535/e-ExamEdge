@@ -24,6 +24,6 @@ yarn-error.log*
 
 # custom additions
 .env
-backend/.env
+# backend/.env
 backend/node_modules/
-backend/debug_email.js
+# backend/debug_email.js

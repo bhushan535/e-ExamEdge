@@ -13,7 +13,10 @@ const sendResetEmail = async (email, resetToken, mode, role) => {
   const isPrincipal = role === 'principal';
   const roleName = isPrincipal ? 'Principal (Admin)' : 'Teacher';
   const modeName = mode === 'solo' ? 'Solo Mode' : 'Organization Mode';
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
+
+  console.log(`[PASSWORD_RESET] Link generated for ${email}: ${resetUrl}`);
 
   const mailOptions = {
     from: `"AI Proctoring System" <${process.env.EMAIL_USER}>`,

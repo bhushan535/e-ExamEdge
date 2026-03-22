@@ -22,24 +22,28 @@ export async function logViolation({ event, examId, studentId, snapshot, config 
     }
   }
 
+  console.log(`[VIOLATION LOG] Type: ${event.type}, Severity: ${event.severity}`);
+
   try {
     const res = await fetch(`${BASE_URL}/violations`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     })
-    if (!res.ok) throw new Error(res.status)
+    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+    console.log(`[VIOLATION LOG] Saved successfully: ${event.type}`);
   } catch (err) {
-    // Retry once after 2 seconds
+    console.error(`[VIOLATION LOG] Failed: ${err.message}`);
+    // Retry once after 3 seconds
     setTimeout(async () => {
       try {
         await fetch(`${BASE_URL}/violations`, {
-
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         })
+        console.log(`[VIOLATION LOG] Saved on retry: ${event.type}`);
       } catch (_) { } // Silent fail — never crash exam
-    }, 2000)
+    }, 3000)
   }
 }

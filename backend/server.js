@@ -9,6 +9,7 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     /\.vercel\.app$/       // allow all *.vercel.app subdomains
   ],
   credentials: true
@@ -47,7 +48,9 @@ mongoose
     console.log("MongoDB Connected");
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`\n🚀 [${new Date().toLocaleTimeString()}] SERVER RESTARTED`);
+      console.log(`📡 URL: http://localhost:${PORT}`);
+      console.log(`🌐 Waiting for requests...\n`);
     });
   })
   .catch((err) => {

@@ -6,7 +6,6 @@ import PopupModal from "../../Common/PopupModal";
 import "./AttemptExamPage.css";
 import ProctoringEngine from "../../../proctoring/ProctoringEngine";
 import axios from "axios";
-import { BASE_URL } from '../../../config';
 
 function AttemptExamPage() {
   const { examId } = useParams();
@@ -91,7 +90,7 @@ function AttemptExamPage() {
 
   const stripPrefix = (text) => {
     if (!text) return "";
-    return text.replace(/^\s*[\(\[]?[A-Da-d][\)\]\.]\s*/, "").trim();
+    return text.replace(/^\s*[([ ]?[A-Da-d][)\]\.]\s*/, "").trim();
   };
 
   const handleSelect = (qid, option) => {
@@ -161,6 +160,18 @@ function AttemptExamPage() {
     // eslint-disable-next-line
   }, [answers, examId, questions.length, navigate]);
 
+  const handleAutoSubmit = useCallback(() => {
+    submitExam(true);
+  }, [submitExam]);
+
+  const handleProctorWarning = useCallback((event) => {
+    showToast("⚠️ Proctoring Warning: Please focus on the exam.", "warning");
+  }, [showToast]);
+
+  const handleProctorReady = useCallback(() => {
+    showToast("🛡️ AI Proctoring Initialized & Active", "success", 3000);
+  }, [showToast]);
+
   if (questions.length === 0) {
     return <div className="loading-screen"><div className="spinner"></div></div>;
   }
@@ -181,8 +192,9 @@ function AttemptExamPage() {
           examId={examId}
           studentId={JSON.parse(localStorage.getItem("student"))?.enrollment || "Unknown"}
           config={proctoringConfig}
-          onAutoSubmit={() => submitExam(true)}
-          onWarning={(event) => showToast("⚠️ Proctoring Warning: Please focus on the exam.", "warning")}
+          onAutoSubmit={handleAutoSubmit}
+          onWarning={handleProctorWarning}
+          onReady={handleProctorReady}
         />
       )}
 
