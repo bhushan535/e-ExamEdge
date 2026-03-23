@@ -13,16 +13,18 @@ export default function ViolationFlash({ severity }) {
 
     if (severity === "medium") {
       setFlashClass("flash-medium");
-      const timer = setTimeout(() => setFlashClass(""), 400); // 400ms CSS animation
+      const timer = setTimeout(() => setFlashClass(""), 2000); // 2 second duration
       return () => clearTimeout(timer);
     } else if (severity === "high") {
       setFlashClass("flash-high");
-      const timer = setTimeout(() => setFlashClass(""), 600); // 600ms CSS animation
+      const timer = setTimeout(() => setFlashClass(""), 2000); // 2 second duration
       return () => clearTimeout(timer);
     }
   }, [severity]);
 
   if (!flashClass) return null;
+
+  const isHigh = flashClass === "flash-high";
 
   return (
     <div
@@ -30,14 +32,22 @@ export default function ViolationFlash({ severity }) {
         position: "fixed",
         top: 0,
         left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9998,
+        width: "100%",
+        height: "52px",
+        zIndex: 10001, // Above everything
         pointerEvents: "none",
-        backgroundColor: flashClass === "flash-medium" ? "rgba(255, 255, 0, 0.3)" : "rgba(255, 0, 0, 0.4)",
-        transition: "background-color 0.1s ease-out",
-        opacity: 1, // You could add actual keyframes in a real app
+        backgroundColor: isHigh ? "#dc2626" : "#f59e0b", // Red-600 or Amber-500
+        color: "white",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "all 0.3s ease-in-out",
+        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
       }}
-    />
+    >
+      <span style={{ fontWeight: "800", fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+        {isHigh ? "⚠️ Critical Warning: Prohibited Activity Detected" : "⚠️ Suspicious Activity Detected: Please stay focused"}
+      </span>
+    </div>
   );
 }

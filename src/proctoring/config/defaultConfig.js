@@ -8,14 +8,14 @@ export const defaultConfig = {
   },
 
   headPose: {
-    lookAwayThresholdMs: 10000,
+    lookAwayThresholdMs: 3000,
     centerResetFrames: 5,     // Need 5 consecutive "center" frames to reset timer
     fpsInterval: 200,         // Run at 5 FPS
   },
 
   gaze: {
     enabled: true,
-    lookAwayThresholdMs: 8000,
+    lookAwayThresholdMs: 3000,
     irisOffsetThreshold: 0.15,
   },
 

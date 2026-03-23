@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { defaultConfig } from "./config/defaultConfig";
 import AIProctoringDetector from "./AIProctoringDetector";
 import ProctoringOverlay from "./ui/ProctoringOverlay";
@@ -20,7 +20,7 @@ import { initClipboardBlocker, destroyClipboardBlocker } from "./security/Clipbo
 import { initMultiMonitorDetector, destroyMultiMonitorDetector } from "./security/MultiMonitorDetector";
 import { initDevToolsDetector, destroyDevToolsDetector } from "./security/DevToolsDetector";
 
-export default function ProctoringEngine({ examId, studentId, config = {}, onAutoSubmit, onWarning }) {
+export default function ProctoringEngine({ examId, studentId, config = {}, onAutoSubmit, onWarning, onReady }) {
   const videoRef = useRef(null);
   const examStartRef = useRef(Date.now());
   const [warningCount, setWarningCount] = useState(0);
@@ -37,7 +37,12 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       fullscreen: { ...defaultConfig.fullscreen, ...config.fullscreen },
       strikes: { ...defaultConfig.strikes, ...config.strikes },
       violations: { ...defaultConfig.violations, ...config.violations },
-      objects: { ...defaultConfig.objects, ...config.objects },
+      objects: { 
+        ...defaultConfig.objects, 
+        ...config.objects,
+        checkIntervalMs: 2000, 
+        sustainedDetectionMs: 3000 
+      },
       persons: { ...defaultConfig.persons, ...config.persons },
     };
 
@@ -60,21 +65,30 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
     return base;
   }, [config]);
 
-  const submitExam = () => onAutoSubmit?.();
-  const warnStudent = (msg) => onWarning?.(msg);
+  const submitExam = useCallback(() => onAutoSubmit?.(), [onAutoSubmit]);
+  const warnStudent = useCallback((msg) => onWarning?.(msg), [onWarning]);
 
-  const handleFinalViolation = async (event) => {
+  const handleFinalViolation = useCallback(async (event) => {
     if (!event) return;
+    console.log(`[PROCTOR_ENGINE] Processing final violation: ${event.type}`);
 
-    // 1. GRACE PERIOD check
-    if (Date.now() - examStartRef.current < mergedConfig.gracePeriodMs) {
+    // 1. GRACE PERIOD check (Skip for critical security events like fullscreen_exit)
+    if (event.type !== "fullscreen_exit" && (Date.now() - examStartRef.current < mergedConfig.gracePeriodMs)) {
+      console.log(`[PROCTOR_ENGINE] Violation ${event.type} ignored during grace period.`);
       return;
     }
 
-    // 2. Snapshot
+    // 2. DEDUPLICATION check (Min 5 seconds between same type)
+    const now = Date.now();
+    const lastTime = lastLogTimeRef.current[event.type] || 0;
+    if (now - lastTime < 5000) return;
+    lastLogTimeRef.current[event.type] = now;
+
+    // 3. Snapshot
     const snapshot = captureFrame(videoRef.current);
 
-    // 3. Log to backend
+    // 4. Log to backend
+    console.log(`[PROCTOR_ENGINE] Logging violation:`, { type: event.type, severity: event.severity, examId, studentId });
     await logViolation({
       event,
       examId,
@@ -83,10 +97,10 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       config: mergedConfig
     });
 
-    // 4. Action Engine (Strikes & UI Events)
+    // 5. Action Engine (Strikes & UI Events)
     handleViolationAction(event, { warnStudent, submitExam }, mergedConfig);
 
-    // 5 & 6. Update local UI state
+    // 6 & 7. Update local UI state
     if (event.severity === "medium" || event.severity === "high") {
       setLastViolation(event);
       if (event.severity === "medium") {
@@ -96,11 +110,11 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       }
     }
 
-    // 7. Parent callback
+    // 8. Parent callback
     onWarning?.(event);
-  };
+  }, [examId, studentId, mergedConfig, warnStudent, submitExam, onWarning]);
 
-  const processRawEvent = (rawEvents) => {
+  const processRawEvent = useCallback((rawEvents) => {
     if (!rawEvents) return;
     const events = Array.isArray(rawEvents) ? rawEvents : [rawEvents];
 
@@ -108,27 +122,65 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       const finalEvent = processViolation(event, mergedConfig);
       if (finalEvent) handleFinalViolation(finalEvent);
     });
-  };
+  }, [mergedConfig, handleFinalViolation]);
 
   // Status Handlers
-  const handleFaceStatus = (status) => {
+  const handleFaceStatus = useCallback((status) => {
     const rules = evaluateFaceRules(status);
     processRawEvent(rules);
-  };
+  }, [processRawEvent]);
 
-  const handleHeadPose = (direction) => {
+  const handleHeadPose = useCallback((direction) => {
     const rule = evaluateHeadPose(direction, mergedConfig);
     processRawEvent(rule);
-  };
+  }, [processRawEvent, mergedConfig]);
 
-  const handleGaze = (direction) => {
+  const handleGaze = useCallback((direction) => {
     const rule = evaluateGaze(direction, mergedConfig);
     processRawEvent(rule);
-  };
+  }, [processRawEvent, mergedConfig]);
 
-  const handleSecurityViolation = (event) => {
+  const handleSecurityViolation = useCallback((event) => {
+    console.log(`[PROCTOR_ENGINE] Security violation received: ${event.type}`);
     processRawEvent(event);
-  };
+  }, [processRawEvent]);
+
+  const isReadyRef = useRef(false);
+  const heartbeatRef = useRef(null);
+
+  const handleReady = useCallback(() => {
+    if (!isReadyRef.current) {
+      isReadyRef.current = true;
+      onReady?.();
+    }
+  }, [onReady]);
+
+  const lastLogTimeRef = useRef({});
+
+  // Heartbeat Effect
+  useEffect(() => {
+    if (config?.enabled === false) return;
+    
+    console.log(`[PROCTOR_HEALTH] Monitoring active for Student: ${studentId}`);
+    
+    // Log a "heartbeat" snapshot every 60 seconds to ensure monitoring is visible in DB
+    heartbeatRef.current = setInterval(async () => {
+      if (!videoRef.current) return;
+      console.log("[PROCTOR_HEALTH] Capturing heartbeat frame...");
+      const snapshot = captureFrame(videoRef.current);
+      await logViolation({
+        event: { type: "heartbeat", severity: "low" },
+        examId,
+        studentId,
+        snapshot,
+        config: mergedConfig
+      });
+    }, 60000);
+
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    };
+  }, [examId, studentId, mergedConfig, config?.enabled]);
 
   // Mount/Unmount effect for security detectors
   useEffect(() => {
@@ -140,9 +192,8 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       initTabDetector(handleSecurityViolation);
     }
     
-    if (mergedConfig.fullscreen.enforced) {
-       initFullscreen(handleSecurityViolation, mergedConfig);
-    }
+    // Always init fullscreen detection if proctoring is enabled to ensure logging
+    initFullscreen(handleSecurityViolation, mergedConfig);
 
     initKeyboardBlocker(handleSecurityViolation);
     initClipboardBlocker(handleSecurityViolation);
@@ -184,7 +235,7 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       destroyDevToolsDetector();
       stopAudioDetector();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [handleSecurityViolation, mergedConfig, config?.enabled, config?.disableTabSwitching, processRawEvent]);
 
   if (config && config.enabled === false) {
     return null;
@@ -198,6 +249,7 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
         onPose={handleHeadPose} 
         onGaze={handleGaze} 
         config={mergedConfig} 
+        onReady={handleReady}
       />
 
       <ProctoringOverlay

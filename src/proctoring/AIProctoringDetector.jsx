@@ -6,7 +6,7 @@ import { Camera } from "@mediapipe/camera_utils";
  * AIProctoringDetector - Consolidates all MediaPipe logic into a single instance
  * to avoid WASM conflicts (Module.arguments error) and improve performance.
  */
-export default function AIProctoringDetector({ videoRef, onFaceStatus, onPose, onGaze, config }) {
+export default function AIProctoringDetector({ videoRef, onFaceStatus, onPose, onGaze, config, onReady }) {
   const lastEmitTime = useRef({ face: 0, pose: 0, gaze: 0 });
   const lastState = useRef({ faceCount: 0, poseDir: null, gazeDir: null });
 
@@ -120,6 +120,7 @@ export default function AIProctoringDetector({ videoRef, onFaceStatus, onPose, o
         });
 
         await camera.start();
+        if (onReady) onReady();
       } catch (err) {
         console.error("AIProctoringDetector Init Error:", err);
       }
@@ -138,7 +139,7 @@ export default function AIProctoringDetector({ videoRef, onFaceStatus, onPose, o
          videoEl.srcObject = null;
       }
     };
-  }, [onFaceStatus, onPose, onGaze, videoRef, config]);
+  }, [onFaceStatus, onPose, onGaze, videoRef, config.gaze?.enabled, config.gaze?.irisOffsetThreshold]);
 
   return (
     <video

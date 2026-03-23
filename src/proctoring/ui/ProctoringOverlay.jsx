@@ -100,61 +100,11 @@ export default function ProctoringOverlay({ videoRef, warningCount, maxStrikes, 
         `}
       </style>
 
-      {/* 1. Header Banner */}
-      <div style={{
-        position: "fixed",
-        top: "12px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        backgroundColor: "#FFFFFF",
-        color: "#000000",
-        zIndex: 9999,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: "20px",
-        padding: "10px 24px",
-        borderRadius: "40px",
-        border: "3px solid #000000",
-        boxShadow: "6px 6px 0px #000000",
-        fontFamily: "'Outfit', sans-serif",
-        fontSize: "14px",
-        fontWeight: "800",
-        pointerEvents: "none",
-        minWidth: "320px"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div className="pulse-dot" style={{ 
-            width: "12px", 
-            height: "12px", 
-            backgroundColor: "#FF3B3B", 
-            borderRadius: "50%",
-            border: "2px solid black" 
-          }} />
-          <span style={{ letterSpacing: "0.5px", textTransform: "uppercase" }}>AI Proctoring Active</span>
-        </div>
-        <div style={{ 
-          height: "20px", 
-          width: "2px", 
-          backgroundColor: "#000000",
-          opacity: 0.2
-        }} />
-        <div style={{ 
-          color: warningCount >= maxStrikes - 1 ? "#FF3B3B" : "#000000",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px"
-        }}>
-          <span style={{ fontSize: "16px" }}>⚠️</span>
-          <span>Warnings: {warningCount}/{maxStrikes}</span>
-        </div>
-      </div>
-
-      {/* 2. Self-View Circle (lower right) */}
+      {/* 2. Self-View Circle (lower left) */}
       <div style={{
         position: "fixed",
         bottom: "34px",
-        right: "34px",
+        left: "34px", // Moved to left to avoid blocking Submit button
         zIndex: 9999,
         backgroundColor: "#FFFFFF",
         borderRadius: "50%",
@@ -209,14 +159,14 @@ export default function ProctoringOverlay({ videoRef, warningCount, maxStrikes, 
       {/* 3. Violation Flash */}
       <ViolationFlash severity={flashSeverity} />
 
-      {/* 4. Notification Card (center) */}
+    {/* 4. Notification Card (center) */}
       {showPopup && (
         <div style={{
           position: "fixed",
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          zIndex: 10000,
+          zIndex: 10002, // Top of hierarchy
           backgroundColor: popupSeverity === "high" ? "#FFACAC" : "#FFE66D",
           color: "#000000",
           border: "4px solid #000000",
