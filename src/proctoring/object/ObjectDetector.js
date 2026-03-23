@@ -8,7 +8,7 @@ export async function detectObjects(videoEl, config) {
   }
 
   const now = Date.now();
-  if (now - lastRun < 5000) {
+  if (now - lastRun < 1500) {
     return [];
   }
   lastRun = now;

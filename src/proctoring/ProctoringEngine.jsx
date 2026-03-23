@@ -37,7 +37,12 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       fullscreen: { ...defaultConfig.fullscreen, ...config.fullscreen },
       strikes: { ...defaultConfig.strikes, ...config.strikes },
       violations: { ...defaultConfig.violations, ...config.violations },
-      objects: { ...defaultConfig.objects, ...config.objects },
+      objects: { 
+        ...defaultConfig.objects, 
+        ...config.objects,
+        checkIntervalMs: 2000, 
+        sustainedDetectionMs: 3000 
+      },
       persons: { ...defaultConfig.persons, ...config.persons },
     };
 
@@ -65,9 +70,11 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
 
   const handleFinalViolation = useCallback(async (event) => {
     if (!event) return;
+    console.log(`[PROCTOR_ENGINE] Processing final violation: ${event.type}`);
 
-    // 1. GRACE PERIOD check
-    if (Date.now() - examStartRef.current < mergedConfig.gracePeriodMs) {
+    // 1. GRACE PERIOD check (Skip for critical security events like fullscreen_exit)
+    if (event.type !== "fullscreen_exit" && (Date.now() - examStartRef.current < mergedConfig.gracePeriodMs)) {
+      console.log(`[PROCTOR_ENGINE] Violation ${event.type} ignored during grace period.`);
       return;
     }
 
@@ -81,6 +88,7 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
     const snapshot = captureFrame(videoRef.current);
 
     // 4. Log to backend
+    console.log(`[PROCTOR_ENGINE] Logging violation:`, { type: event.type, severity: event.severity, examId, studentId });
     await logViolation({
       event,
       examId,
@@ -133,6 +141,7 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
   }, [processRawEvent, mergedConfig]);
 
   const handleSecurityViolation = useCallback((event) => {
+    console.log(`[PROCTOR_ENGINE] Security violation received: ${event.type}`);
     processRawEvent(event);
   }, [processRawEvent]);
 
@@ -183,9 +192,8 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       initTabDetector(handleSecurityViolation);
     }
     
-    if (mergedConfig.fullscreen.enforced) {
-       initFullscreen(handleSecurityViolation, mergedConfig);
-    }
+    // Always init fullscreen detection if proctoring is enabled to ensure logging
+    initFullscreen(handleSecurityViolation, mergedConfig);
 
     initKeyboardBlocker(handleSecurityViolation);
     initClipboardBlocker(handleSecurityViolation);

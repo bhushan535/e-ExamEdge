@@ -16,32 +16,35 @@ async function attemptFullscreen() {
 }
 
 function handleFullscreenChange() {
-  if (!document.fullscreenElement) {
+  const isFull = !!document.fullscreenElement;
+  console.log(`[FULLSCREEN_MANAGER] Change detected. IsFull: ${isFull}`);
+
+  if (!isFull) {
     // User exited fullscreen
     exitCount++;
+    console.log(`[FULLSCREEN_MANAGER] Exit detected. Total exits: ${exitCount}`);
     
-    if (exitCount < currentConfig.fullscreen.maxExitsBeforeViolation) {
+    if (currentConfig.fullscreen.enforced && exitCount >= currentConfig.fullscreen.maxExitsBeforeViolation) {
+      console.log(`[FULLSCREEN_MANAGER] Escalating to HIGH violation`);
+      if (violationCallback) {
+        violationCallback({ type: "fullscreen_exit", severity: "high", count: exitCount });
+      }
+    } else {
+      console.log(`[FULLSCREEN_MANAGER] Triggering violation (Severity: ${currentConfig.fullscreen.enforced ? 'medium' : 'low'})`);
       if (violationCallback) {
         violationCallback({
           type: "fullscreen_exit",
-          severity: "medium",
+          severity: currentConfig.fullscreen.enforced ? "medium" : "low",
           count: exitCount
         });
       }
-      
-      // Force them back in after a delay
-      if (forceBackTimer) clearTimeout(forceBackTimer);
-      forceBackTimer = setTimeout(() => {
-        attemptFullscreen();
-      }, currentConfig.fullscreen.forceBackDelayMs);
-      
-    } else {
-      if (violationCallback) {
-        violationCallback({
-          type: "fullscreen_exit",
-          severity: "high",
-          count: exitCount
-        });
+
+      // Only force them back if enforced
+      if (currentConfig.fullscreen.enforced) {
+        if (forceBackTimer) clearTimeout(forceBackTimer);
+        forceBackTimer = setTimeout(() => {
+          attemptFullscreen();
+        }, currentConfig.fullscreen.forceBackDelayMs);
       }
     }
   }
@@ -52,8 +55,9 @@ export function initFullscreen(onViolation, config) {
   violationCallback = onViolation;
   currentConfig = config;
   
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+
   if (config.fullscreen.enforced) {
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
     attemptFullscreen();
   }
   
@@ -65,10 +69,6 @@ export function destroyFullscreen() {
   
   document.removeEventListener("fullscreenchange", handleFullscreenChange);
   if (forceBackTimer) clearTimeout(forceBackTimer);
-  
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch(() => {});
-  }
   
   violationCallback = null;
   currentConfig = null;

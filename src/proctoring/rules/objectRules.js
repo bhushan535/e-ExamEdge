@@ -1,4 +1,4 @@
-const PHONE_LABELS = ["cell phone", "cellphone", "mobile phone", "phone", "remote"];
+const PHONE_LABELS = ["cell phone", "cellphone", "mobile phone", "phone", "remote", "telephone", "mobile"];
 const BOOK_LABELS = ["book", "notebook", "magazine"];
 
 let objectStartTime = {};
@@ -18,7 +18,7 @@ export function evaluateObjectRules(objects, config) {
       }
 
       const duration = now - objectStartTime[obj.class];
-      const sustainedMs = config?.objects?.sustainedDetectionMs || 5000;
+      const sustainedMs = config?.objects?.sustainedDetectionMs || 3000;
 
       if (duration >= sustainedMs) {
         violations.push({

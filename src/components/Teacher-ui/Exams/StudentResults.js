@@ -153,7 +153,7 @@ function StudentResults() {
                   <td><span className={r.percentage >= 40 ? "er-pass-tag" : "er-fail-tag"}>{r.percentage >= 40 ? "Pass" : "Fail"}</span></td>
                   <td>
                     <button 
-                      style={{ padding: "4px 8px", fontSize: "0.8rem", cursor: "pointer", borderRadius: "4px", border: "1px solid #cbd5e1", background: "#f8fafc" }}
+                      className="er-view-logs-btn"
                       onClick={() => { setSelectedStudent({ id: r.studentId, name: r.studentName }); setShowLogsModal(true); }}
                     >
                       View Logs

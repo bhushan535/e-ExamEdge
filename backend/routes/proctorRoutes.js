@@ -7,6 +7,7 @@ const ProctorLog = require("../models/ProctorLog");
 router.post("/", async (req, res) => {
   try {
     const { examId, studentId, type, severity, timestamp, snapshot, meta } = req.body;
+    console.log(`[BACKEND] Violation received: type=${type}, severity=${severity}, student=${studentId}, exam=${examId}`);
 
     const newLog = new ProctorLog({
       examId,

@@ -1,8 +1,12 @@
 import { BASE_URL } from '../../config';
-export async function logViolation({ event, examId, studentId, snapshot, config }) {
 
+/**
+ * Logs a proctoring violation to the backend.
+ * Includes a retry mechanism for improved reliability.
+ */
+export async function logViolation({ event, examId, studentId, snapshot, config }) {
   // Only include snapshot if: high severity, OR (medium AND config.snapshotOnMedium)
-  const includeSnapshot = event.severity === "high" || (event.severity === "medium" && config.snapshotOnMedium)
+  const includeSnapshot = event.severity === "high" || (event.severity === "medium" && config.snapshotOnMedium);
 
   const payload = {
     examId,
@@ -20,30 +24,48 @@ export async function logViolation({ event, examId, studentId, snapshot, config 
       tabTitle: event.meta?.tabTitle || null,
       dB: event.dB || null,
     }
-  }
+  };
 
-  console.log(`[VIOLATION LOG] Type: ${event.type}, Severity: ${event.severity}`);
+  const endpoint = `${BASE_URL}/violations`;
+  console.log(`[VIOLATION_LOGGER] Attempting to log ${event.type} to ${endpoint}...`, { severity: event.severity, hasSnapshot: !!payload.snapshot });
 
   try {
-    const res = await fetch(`${BASE_URL}/violations`, {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
-    })
-    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
-    console.log(`[VIOLATION LOG] Saved successfully: ${event.type}`);
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`[VIOLATION_LOGGER] Server error (${res.status}): ${errorText}`);
+      throw new Error(`HTTP Error ${res.status}`);
+    }
+
+    console.log(`[VIOLATION_LOGGER] Successfully saved violation: ${event.type}`);
+    return true;
   } catch (err) {
-    console.error(`[VIOLATION LOG] Failed: ${err.message}`);
-    // Retry once after 3 seconds
+    console.error(`[VIOLATION_LOGGER] Primary attempt failed for ${event.type}: ${err.message}`);
+
+    // Simple one-time retry after 3 seconds
     setTimeout(async () => {
       try {
-        await fetch(`${BASE_URL}/violations`, {
+        console.log(`[VIOLATION_LOGGER] Retrying log for ${event.type}...`);
+        const retryRes = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
-        })
-        console.log(`[VIOLATION LOG] Saved on retry: ${event.type}`);
-      } catch (_) { } // Silent fail — never crash exam
-    }, 3000)
+        });
+        if (retryRes.ok) {
+          console.log(`[VIOLATION_LOGGER] Successfully saved on retry: ${event.type}`);
+        } else {
+          console.error(`[VIOLATION_LOGGER] Retry failed with status: ${retryRes.status}`);
+        }
+      } catch (retryErr) {
+        console.error(`[VIOLATION_LOGGER] Retry attempt error for ${event.type}:`, retryErr);
+      }
+    }, 3000);
+
+    return false;
   }
 }
