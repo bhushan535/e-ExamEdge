@@ -14,7 +14,13 @@ app.use(cors({
   ],
   credentials: true
 }));
+app.get("/", (req, res) => {
+  res.send("e-ExamEdge Backend Running");
+});
 
+app.get("/api/health", (req, res) => {
+  res.send("API Working");
+});
 app.use(express.json({ limit: "50mb" }));
 
 // Request Logger
