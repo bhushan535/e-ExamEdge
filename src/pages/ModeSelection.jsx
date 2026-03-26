@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { FaUserPlus, FaBuilding, FaArrowRight, FaCheckCircle, FaUserShield } from 'react-icons/fa';
+import { FaUserPlus, FaBuilding, FaArrowRight, FaCheckCircle } from 'react-icons/fa';
 import BackButton from "../components/Common/BackButton";
 import './ModeSelection.css';
 

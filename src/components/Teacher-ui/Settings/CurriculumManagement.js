@@ -11,9 +11,9 @@ import {
 import "./OrgSettings.css"; // Reusing styles
 
 const CurriculumManagement = () => {
-    const { refreshOrg } = useAuth();
+    const { refreshOrg, token } = useAuth();
     const navigate = useNavigate();
-    const { token } = useAuth();
+
     const { toasts, showToast, removeToast } = useToast();
     
     const [settings, setSettings] = useState({
@@ -57,6 +57,7 @@ const CurriculumManagement = () => {
             }
         };
         if (token) fetchSettings();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     // Tag Input Logic

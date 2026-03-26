@@ -11,6 +11,7 @@ export default function AIProctoringDetector({ videoRef, onFaceStatus, onPose, o
   const lastState = useRef({ faceCount: 0, poseDir: null, gazeDir: null });
 
   useEffect(() => {
+    const videoEl = videoRef.current;
     let active = true;
     let faceMesh = null;
     let camera = null;
@@ -133,12 +134,12 @@ export default function AIProctoringDetector({ videoRef, onFaceStatus, onPose, o
       if (camera) camera.stop();
       if (faceMesh) faceMesh.close();
       
-      const videoEl = videoRef.current;
       if (videoEl && videoEl.srcObject) {
          videoEl.srcObject.getTracks().forEach(track => track.stop());
          videoEl.srcObject = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onFaceStatus, onPose, onGaze, videoRef, config.gaze?.enabled, config.gaze?.irisOffsetThreshold]);
 
   return (

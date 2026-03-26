@@ -6,7 +6,7 @@ import Toast from "../../Common/Toast";
 import useToast from "../../Common/useToast";
 import BackButton from "../../Common/BackButton";
 import {
-    FaSave, FaImage, FaShieldAlt, FaInfoCircle,
+    FaSave, FaImage, FaInfoCircle,
     FaUndo, FaSpinner
 } from 'react-icons/fa';
 import "./OrgSettings.css";
@@ -54,6 +54,7 @@ const OrgSettings = () => {
             }
         };
         if (token) fetchSettings();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     // Logo Handlers
@@ -98,7 +99,7 @@ const OrgSettings = () => {
                 permissions: settings.permissions
             };
 
-            const res = await saveOrgSettings(payload);
+            await saveOrgSettings(payload);
             showToast('Profile updated successfully!', 'success');
             await refreshOrg(); // Refresh global header context
             setTimeout(() => navigate('/TeacherHome'), 1500);
@@ -131,7 +132,7 @@ const OrgSettings = () => {
         }
     };
 
-    const togglePermission = (key) => {
+    const _togglePermission = (key) => {
         setSettings(prev => ({
             ...prev,
             permissions: { ...prev?.permissions, [key]: !prev?.permissions?.[key] }
