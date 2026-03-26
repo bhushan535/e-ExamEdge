@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { BASE_URL } from "../../../config";
+
 import "./CurriculumGallery.css";
 import BackButton from "../../Common/BackButton";
 import { 
@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 
 function CurriculumGallery() {
-  const { org, token } = useAuth();
+  const { org } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("All");
 

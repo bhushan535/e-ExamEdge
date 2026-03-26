@@ -5,13 +5,13 @@ import axios from 'axios';
 import Toast from "../../Common/Toast";
 import useToast from "../../Common/useToast";
 import BackButton from "../../Common/BackButton";
-import { FaSearch, FaUserGraduate, FaFilter, FaEdit, FaFileExcel, FaUserCircle, FaGraduationCap, FaCalendarAlt, FaTrash, FaIdCard, FaEnvelope } from 'react-icons/fa';
+import { FaSearch, FaUserGraduate, FaFilter, FaEdit, FaFileExcel, FaGraduationCap, FaCalendarAlt, FaTrash, FaIdCard, FaEnvelope } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import PopupModal from "../../Common/PopupModal";
 import "./StudentManagement.css";
 
 const StudentManagement = () => {
-  const { token, org, refreshOrg } = useAuth();
+  const { token, refreshOrg } = useAuth();
   const { toasts, showToast, removeToast } = useToast();
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
@@ -48,12 +48,14 @@ const StudentManagement = () => {
     if (token) {
       fetchStudents();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, branch, semester]);
 
   useEffect(() => {
     if (token) {
       refreshOrg();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleSearch = (e) => {

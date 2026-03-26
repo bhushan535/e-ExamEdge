@@ -3,9 +3,9 @@ import { useAuth } from "../../../context/AuthContext";
 import { BASE_URL } from '../../../config';
 import Toast from "../../Common/Toast";
 import useToast from "../../Common/useToast";
-import PopupModal from "../../Common/PopupModal";
+
 import BackButton from "../../Common/BackButton";
-import { FaUserPlus, FaUserShield, FaUsers, FaBuilding, FaIdCard, FaEnvelope, FaTimes, FaTrash, FaKey, FaLock } from 'react-icons/fa';
+import { FaUserPlus, FaUserShield, FaUsers, FaBuilding, FaIdCard, FaEnvelope, FaTimes, FaTrash, FaLock } from 'react-icons/fa';
 import "./TeacherManagement.css";
 
 const TeacherManagement = () => {
@@ -20,7 +20,7 @@ const TeacherManagement = () => {
     department: '',
     employeeId: ''
   });
-  const [branches, setBranches] = useState([]);
+
 
   const fetchTeachers = async () => {
     try {
@@ -39,6 +39,7 @@ const TeacherManagement = () => {
       fetchTeachers();
       refreshOrg(); // Ensure branches are up to date
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleAddTeacher = async (e) => {

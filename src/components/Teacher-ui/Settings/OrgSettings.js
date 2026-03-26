@@ -132,12 +132,6 @@ const OrgSettings = () => {
         }
     };
 
-    const _togglePermission = (key) => {
-        setSettings(prev => ({
-            ...prev,
-            permissions: { ...prev?.permissions, [key]: !prev?.permissions?.[key] }
-        }));
-    };
 
     if (loading) {
         return (
