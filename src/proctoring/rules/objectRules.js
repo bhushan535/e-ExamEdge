@@ -23,7 +23,7 @@ export function evaluateObjectRules(objects, config) {
       if (duration >= sustainedMs) {
         violations.push({
           type: "object_detected",
-          severity: isPhone ? "high" : "medium",
+          severity: "high",
           object: obj.class,
           duration
         });

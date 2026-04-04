@@ -33,7 +33,7 @@ export function evaluateHeadPose(direction, config) {
       const cooldown = config.headPose.lookDownCooldownMs || 20000;
       if (now - lastLookDownTime >= cooldown) {
         lastLookDownTime = now;
-        return { type: "looking_down", severity: "low", duration };
+        return { type: "looking_down", severity: "medium", duration };
       }
     }
   }

@@ -49,8 +49,8 @@ export function processViolation(event, config) {
       return emitOnce({ ...event, severity: "medium" }, config);
 
     case "looking_down":
-      // Low severity — log only, no strike
-      return emitOnce({ ...event, severity: "low" }, config);
+      // Medium severity — 1 strike, snapshot after 6s threshold
+      return emitOnce({ ...event, severity: "medium" }, config);
 
     case "gaze_away":
       return emitOnce({ ...event, severity: "medium" }, config);
@@ -74,12 +74,17 @@ export function processViolation(event, config) {
       return event;
 
     case "clipboard_paste":
-      return emitOnce({ ...event, severity: "medium" }, config);
+      return emitOnce({ ...event, severity: "high" }, config);
 
     case "keyboard_cheat":
+      return emitOnce({ ...event, severity: "medium" }, config);
+
     case "multi_monitor":
     case "devtools_open":
-      return emitOnce({ ...event, severity: "medium" }, config);
+      return emitOnce({ ...event, severity: "high" }, config);
+
+    case "camera_blocked":
+      return emitOnce({ ...event, severity: "high" }, config);
 
     default:
       return null;

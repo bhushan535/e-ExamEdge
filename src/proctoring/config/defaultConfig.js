@@ -1,15 +1,16 @@
 export const defaultConfig = {
   snapshotOnMedium: true,     // Capture webcam snapshot for medium violations too
+  snapshotCooldownMs: 20000,  // 20s per-violation-type snapshot cooldown
 
   face: {
-    noFaceThresholdMs: 3000,  // 3s without face = violation
+    noFaceThresholdMs: 5000,  // 5s without face = violation
     cooldownMs: 15000,        // 15s between face violations
     callbackThrottleMs: 1000, // Max 1 face status update per second
   },
 
   headPose: {
-    lookAwayThresholdMs: 3000,
-    lookDownThresholdMs: 4000,  // 4s sustained downward look before violation
+    lookAwayThresholdMs: 4000,  // 4s sustained look away before violation
+    lookDownThresholdMs: 6000,  // 6s sustained downward look before violation
     lookDownCooldownMs: 20000,  // 20s cooldown for looking-down violations
     centerResetFrames: 5,       // Need 5 consecutive "center" frames to reset timer
     fpsInterval: 200,           // Run at 5 FPS
@@ -17,8 +18,8 @@ export const defaultConfig = {
 
   gaze: {
     enabled: true,
-    lookAwayThresholdMs: 3000,
-    lookDownThresholdMs: 4000,  // 4s for downward gaze (future use)
+    lookAwayThresholdMs: 4000,  // 4s for gaze away
+    lookDownThresholdMs: 6000,  // 6s for downward gaze
     lookDownCooldownMs: 20000,  // 20s cooldown for gaze-down (future use)
     irisOffsetThreshold: 0.15,
   },
@@ -26,7 +27,7 @@ export const defaultConfig = {
   audio: {
     enabled: true,
     volumeThresholdDb: 40,
-    sustainedMs: 2500,          // Must be loud for 2.5s continuously to count
+    sustainedMs: 3000,          // Must be loud for 3s continuously to count
     cooldownMs: 15000,          // 15s between audio violations
     checkIntervalMs: 500,
   },
@@ -61,11 +62,18 @@ export const defaultConfig = {
     phoneLabels: ["cell phone", "cellphone", "mobile phone", "phone", "remote"],
     bookLabels: ["book", "notebook", "magazine"],
     minConfidence: 0.3,
-    sustainedDetectionMs: 5000,
+    sustainedDetectionMs: 3000,  // 3s sustained detection before violation
   },
 
   persons: {
     checkIntervalMs: 5000,
     minConfidence: 0.6,
+  },
+
+  cameraBlocked: {
+    thresholdMs: 3000,        // 3s of black/blank feed = violation
+    checkIntervalMs: 500,     // Check every 500ms
+    brightnessThreshold: 15,  // Average pixel brightness below this = "black"
+    cooldownMs: 60000,        // 60s between repeat camera_blocked violations
   },
 };

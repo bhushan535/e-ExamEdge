@@ -3,10 +3,62 @@ import { BASE_URL } from '../../config';
 /**
  * Logs a proctoring violation to the backend.
  * Includes a retry mechanism for improved reliability.
+ * 
+ * Snapshot rules (per-violation cooldown):
+ * - NO_SNAPSHOT_TYPES (short_glance, short_noise) → never snapshot
+ * - Low severity → no snapshot
+ * - tab_switch → snapshot only from 2nd occurrence onwards
+ * - All high + medium → snapshot, subject to 20s per-type cooldown
+ * - Strike/log always fires regardless of snapshot cooldown
  */
+
+// Types that should NEVER get a snapshot
+const NO_SNAPSHOT_TYPES = new Set(["short_glance", "short_noise"]);
+
+// Per-violation-type snapshot cooldown tracker
+const lastSnapshotTime = {};
+
+// Tab switch counter for snapshot gating (snapshot only from 2nd switch)
+let tabSwitchSnapshotCount = 0;
+
+/**
+ * Determines whether a snapshot should be included for this violation.
+ */
+function shouldIncludeSnapshot(event, config) {
+  const now = Date.now();
+  const type = event.type;
+
+  // 1. Never snapshot these types
+  if (NO_SNAPSHOT_TYPES.has(type)) return false;
+
+  // 2. Low severity → no snapshot
+  if (event.severity === "low") return false;
+
+  // 3. Heartbeat always gets a snapshot (it's a health check)
+  if (type === "heartbeat") return true;
+
+  // 4. tab_switch → snapshot only from 2nd occurrence onwards
+  if (type === "tab_switch") {
+    tabSwitchSnapshotCount++;
+    if (tabSwitchSnapshotCount < 2) return false;
+  }
+
+  // 5. Per-type snapshot cooldown (20s default)
+  const cooldownMs = config.snapshotCooldownMs || 20000;
+  const lastTime = lastSnapshotTime[type] || 0;
+  if (now - lastTime < cooldownMs) {
+    console.log(`[VIOLATION_LOGGER] Snapshot suppressed for ${type} (cooldown: ${Math.round((cooldownMs - (now - lastTime)) / 1000)}s remaining)`);
+    return false;
+  }
+
+  // 6. High or medium severity → snapshot allowed
+  lastSnapshotTime[type] = now;
+  return true;
+}
+
 export async function logViolation({ event, examId, studentId, snapshot, config }) {
-  // Only include snapshot if: high severity, OR (medium AND config.snapshotOnMedium)
-  const includeSnapshot = event.severity === "high" || (event.severity === "medium" && config.snapshotOnMedium);
+  // Decide whether to include the snapshot using the new rules
+  const includeSnapshot = shouldIncludeSnapshot(event, config);
 
   const payload = {
     examId,

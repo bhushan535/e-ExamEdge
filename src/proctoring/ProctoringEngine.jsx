@@ -19,6 +19,7 @@ import { initKeyboardBlocker, destroyKeyboardBlocker } from "./security/Keyboard
 import { initClipboardBlocker, destroyClipboardBlocker } from "./security/ClipboardBlocker";
 import { initMultiMonitorDetector, destroyMultiMonitorDetector } from "./security/MultiMonitorDetector";
 import { initDevToolsDetector, destroyDevToolsDetector } from "./security/DevToolsDetector";
+import { initCameraBlockedDetector, destroyCameraBlockedDetector } from "./security/CameraBlockedDetector";
 import { resetStrikes, getStrikes } from "./rules/StrikeManager";
 
 export default function ProctoringEngine({ examId, studentId, config = {}, onAutoSubmit, onWarning, onReady }) {
@@ -178,6 +179,9 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       initAudioDetector(handleSecurityViolation, mergedConfig);
     }
 
+    // Camera blocked detector
+    initCameraBlockedDetector(videoRef, handleSecurityViolation, mergedConfig);
+
     // Interval detectors
     const personInterval = setInterval(async () => {
       if (!active || !videoRef.current) return;
@@ -206,6 +210,7 @@ export default function ProctoringEngine({ examId, studentId, config = {}, onAut
       destroyClipboardBlocker();
       destroyMultiMonitorDetector();
       destroyDevToolsDetector();
+      destroyCameraBlockedDetector();
       stopAudioDetector();
     };
   }, [handleSecurityViolation, mergedConfig, config?.disableTabSwitching, processRawEvent]);
