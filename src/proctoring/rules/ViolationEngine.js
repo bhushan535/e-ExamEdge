@@ -50,8 +50,9 @@ export function processViolation(event, config) {
 
     case "looking_down":
       // Medium severity — 1 strike, snapshot after 6s threshold
-      return emitOnce({ ...event, severity: "medium" }, config);
-
+     // return emitOnce({ ...event, severity: "medium" }, config);
+      return null;
+      
     case "gaze_away":
       return emitOnce({ ...event, severity: "medium" }, config);
 
